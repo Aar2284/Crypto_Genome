@@ -205,3 +205,63 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# =====================
+# Python
+# =====================
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# =====================
+# Virtual Environments
+# =====================
+venv/
+.env/
+.env.local
+.env.*.local
+
+# =====================
+# Flask / Python
+# =====================
+instance/
+*.log
+
+# =====================
+# Jupyter
+# =====================
+.ipynb_checkpoints/
+
+# =====================
+# OS Files
+# =====================
+.DS_Store
+Thumbs.db
+
+# =====================
+# Editor / IDE
+# =====================
+.vscode/
+.idea/
+*.swp
+
+# =====================
+# Database
+# =====================
+*.sqlite3
+*.db
+
+# =====================
+# Frontend (if added later)
+# =====================
+node_modules/
+dist/
+build/
+
+# =====================
+# Misc
+# =====================
+coverage/
+*.coverage
+htmlcov/
