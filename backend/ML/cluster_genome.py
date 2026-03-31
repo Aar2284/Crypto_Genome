@@ -1,5 +1,5 @@
 import pandas as pd
-import hdbscan
+from sklearn.mixture import GaussianMixture
 
 # Load scaled data
 df = pd.read_csv("../processing/crypto_genome_scaled.csv")
@@ -7,12 +7,15 @@ df = pd.read_csv("../processing/crypto_genome_scaled.csv")
 coin_ids = df["coin_symbol"]
 features = df.drop(columns=["coin_symbol"])
 
-# Apply HDBSCAN
-clusterer = hdbscan.HDBSCAN(
-    min_cluster_size=5,
-    min_samples=2
+# Apply GMM
+gmm = GaussianMixture(
+    n_components=4,       # number of clusters
+    covariance_type='full',
+    random_state=42
 )
-clusters = clusterer.fit_predict(features)
+
+gmm.fit(features)
+clusters = gmm.predict(features)
 
 # Output
 cluster_df = pd.DataFrame({
@@ -22,7 +25,7 @@ cluster_df = pd.DataFrame({
 
 cluster_df.to_csv("genome_clusters.csv", index=False)
 
-print("\n--- HDBSCAN COMPLETE ---")
+print("\n--- GMM CLUSTERING COMPLETE ---")
 print("Output Shape:", cluster_df.shape)
 
 print("\nCluster Counts:")
