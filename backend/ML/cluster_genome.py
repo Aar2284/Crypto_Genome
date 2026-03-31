@@ -8,7 +8,7 @@ coin_ids = df["coin_symbol"]
 features = df.drop(columns=["coin_symbol"])
 
 # Apply KMeans
-kmeans = KMeans(n_clusters=5, random_state=42)
+kmeans = KMeans(n_clusters=6, random_state=42)
 clusters = kmeans.fit_predict(features)
 
 # Create output
