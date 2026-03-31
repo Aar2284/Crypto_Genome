@@ -8,7 +8,10 @@ coin_ids = df["coin_symbol"]
 features = df.drop(columns=["coin_symbol"])
 
 # Apply HDBSCAN
-clusterer = hdbscan.HDBSCAN(min_cluster_size=5)
+clusterer = hdbscan.HDBSCAN(
+    min_cluster_size=3,
+    min_samples=1
+)
 clusters = clusterer.fit_predict(features)
 
 # Output
