@@ -9,7 +9,7 @@ features = df.drop(columns=["coin_symbol"])
 
 # Apply GMM
 gmm = GaussianMixture(
-    n_components=4,       # number of clusters
+    n_components=5,       # number of clusters
     covariance_type='full',
     random_state=42
 )
