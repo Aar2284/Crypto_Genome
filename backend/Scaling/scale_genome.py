@@ -27,7 +27,7 @@ scaled_df.insert(0, "coin_symbol", coin_ids)
 scaled_df.to_csv("crypto_genome_scaled.csv", index=False)
 
 # Save scaler
-joblib.dump(scaler, "scaler.pkl")
+joblib.dump(scaler, "../ML/model/scaler.pkl")
 
 print("\n--- SCALING COMPLETE ---")
 print("Scaled Shape:", scaled_df.shape)

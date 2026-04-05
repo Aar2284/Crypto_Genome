@@ -2,7 +2,7 @@ import pandas as pd
 from sklearn.mixture import GaussianMixture
 
 # Load scaled data
-df = pd.read_csv("../processing/crypto_genome_scaled.csv")
+df = pd.read_csv("../Scaling/crypto_genome_scaled.csv")
 
 coin_ids = df["coin_symbol"]
 features = df.drop(columns=["coin_symbol"])

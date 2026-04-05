@@ -2,7 +2,7 @@ import pandas as pd
 
 # Load data
 genome = pd.read_csv("../../datasets/crypto_genome_master.csv")
-clusters = pd.read_csv("genome_clusters.csv")
+clusters = pd.read_csv("../Clustering (GMM)/genome_clusters.csv")
 
 # Merge
 df = genome.merge(clusters, on="coin_symbol")

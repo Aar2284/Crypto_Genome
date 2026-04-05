@@ -2,7 +2,7 @@ import pandas as pd
 from sklearn.decomposition import PCA
 
 # Load scaled data
-df = pd.read_csv("../processing/crypto_genome_scaled.csv")
+df = pd.read_csv("../Scaling/crypto_genome_scaled.csv")
 
 # Separate columns
 coin_ids = df["coin_symbol"]
