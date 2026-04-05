@@ -4,3 +4,5 @@ numpy
 scikit-learn
 sqlalchemy
 python-dotenv
+kafka-python
+joblib
