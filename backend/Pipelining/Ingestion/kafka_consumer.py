@@ -18,7 +18,7 @@ def consume_data(consumer):
 
     for message in consumer:
         data = message.value
-        print(f"Received: {data['coin_symbol']}")
+        print(data)
 
 
 def main():
