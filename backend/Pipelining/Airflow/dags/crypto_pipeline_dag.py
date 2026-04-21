@@ -2,6 +2,16 @@ from airflow import DAG
 from airflow.operators.python import PythonOperator
 from datetime import datetime
 import subprocess
+import sys
+import os
+
+sys.path.append(
+    os.path.abspath(
+        os.path.join(os.path.dirname(__file__), '../../Warehouse')
+    )
+)
+
+from load_to_postgres import load_to_postgres_function
 
 def run_producer():
     subprocess.run(["python", "../../Ingestion/kafka_producer.py"])
@@ -29,9 +39,9 @@ with DAG(
         python_callable=run_consumer
     )
 
-    loader_task = PythonOperator(
-        task_id="run_loader",
-        python_callable=run_loader
+    run_loader = PythonOperator(
+    task_id='run_loader',
+    python_callable=load_to_postgres_function
     )
 
-    producer_task >> consumer_task >> loader_task
+    producer_task >> consumer_task >> run_loader
