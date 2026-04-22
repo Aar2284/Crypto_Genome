@@ -19,19 +19,8 @@ with DAG(
     catchup=False
 ) as dag:
 
-    producer = PythonOperator(
-        task_id='run_producer',
-        python_callable=run_producer
-    )
-
-    consumer = PythonOperator(
-        task_id='run_consumer',
-        python_callable=run_consumer
-    )
-
-    loader = PythonOperator(
-        task_id='run_loader',
-        python_callable=run_loader
-    )
+    producer = PythonOperator(task_id='run_producer', python_callable=run_producer)
+    consumer = PythonOperator(task_id='run_consumer', python_callable=run_consumer)
+    loader = PythonOperator(task_id='run_loader', python_callable=run_loader)
 
     producer >> consumer >> loader
