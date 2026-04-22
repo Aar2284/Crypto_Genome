@@ -4,13 +4,19 @@ from datetime import datetime
 import subprocess
 
 def run_producer():
-    subprocess.run(["python", "../../Ingestion/kafka_producer.py"])
+    print("Producer started...")
+    subprocess.run(["python", "/opt/airflow/project/Ingestion/kafka_producer.py"])
+    print("Data sent to Kafka")
 
 def run_consumer():
-    subprocess.run(["python", "../../Ingestion/kafka_consumer.py"])
+    print("Consumer running...")
+    subprocess.run(["python", "/opt/airflow/project/Ingestion/kafka_consumer.py"])
+    print("Data saved to CSV")
 
 def run_loader():
-    subprocess.run(["python", "../../Warehouse/load_to_postgres.py"])
+    print("Loading to PostgreSQL...")
+    subprocess.run(["python", "/opt/airflow/project/Warehouse/load_to_postgres.py"])
+    print("Data inserted successfully")
 
 with DAG(
     dag_id='crypto_genome_pipeline',
