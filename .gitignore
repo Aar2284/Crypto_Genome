@@ -265,3 +265,14 @@ build/
 coverage/
 *.coverage
 htmlcov/
+
+# =====================
+# Airflow logs
+# =====================
+backend/Pipelining/Airflow/logs/
+
+# =====================
+# Docker
+# =====================
+*.log
+*.db
