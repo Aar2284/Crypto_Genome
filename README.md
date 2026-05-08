@@ -1,10 +1,10 @@
 # 🚀 Crypto Genome Data Pipeline
 
-![Python](https://img.shields.io/badge/Python-3.11-blue?logo=python)
-![Kafka](https://img.shields.io/badge/Apache%20Kafka-Streaming-black?logo=apachekafka)
-![Airflow](https://img.shields.io/badge/Apache%20Airflow-Orchestration-red?logo=apacheairflow)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Database-blue?logo=postgresql)
-![Docker](https://img.shields.io/badge/Docker-Containerized-blue?logo=docker)
+![Python](https://img.shields.io/badge/Python-FFD43B.svg?style=for-the-badge&logo=Python&logoColor=white)
+![Kafka](https://img.shields.io/badge/Apache%20Kafka-231F20.svg?style=for-the-badge&logo=Apache-Kafka&logoColor=white)
+![Apache Airflow](https://img.shields.io/badge/Apache%20Airflow-B22222.svg?style=for-the-badge&logo=Apache-Airflow&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1.svg?style=for-the-badge&logo=PostgreSQL&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED.svg?style=for-the-badge&logo=Docker&logoColor=white)
 
 ---
 
