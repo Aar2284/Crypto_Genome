@@ -126,29 +126,262 @@ backend/
 
 ---
 
-## ▶️ How to Run
+## ▶️ Complete Setup & Execution
 
-### 1. Start Infrastructure
+### 🔹 1. Clone Repository
+
+```bash
+git clone https://github.com/Aar2284/Crypto_Genome.git
+cd Crypto_Genome/backend
+```
+
+---
+
+### 🔹 2. Install Python Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+---
+
+### 🔹 3. Start PostgreSQL Database
+
+```bash
+docker start postgres-db
+```
+
+Verify:
+
+```bash
+docker ps
+```
+
+---
+
+### 🔹 4. Start Kafka Infrastructure
+
+Move into ingestion folder:
+
+```bash
+cd Pipelining/Ingestion
+```
+
+Start Kafka container:
 
 ```bash
 docker compose up -d
 ```
 
-### 2. Open Airflow UI
+Verify Kafka is running:
 
+```bash
+docker ps
+```
+
+You should see:
+
+```text
+kafka-kraft
+```
+
+---
+
+### 🔹 5. Start Airflow Infrastructure
+
+Move into Airflow folder:
+
+```bash
+cd ../Airflow
+```
+
+Start Airflow services:
+
+```bash
+docker compose up -d
+```
+
+This starts:
+
+- Airflow Webserver
+- Airflow Scheduler
+- Airflow PostgreSQL Metadata DB
+
+---
+
+### 🔹 6. Create Airflow Admin User (First Time Setup)
+
+Run this command after Airflow containers are running:
+
+```bash
+docker exec -it airflow-airflow-webserver-1 airflow users create \
+--username admin \
+--firstname Admin \
+--lastname User \
+--role Admin \
+--email admin@example.com \
+--password admin
+```
+
+PowerShell version:
+
+```powershell
+docker exec -it airflow-airflow-webserver-1 airflow users create `
+--username admin `
+--firstname Admin `
+--lastname User `
+--role Admin `
+--email admin@example.com `
+--password admin
+```
+
+---
+
+### 🔹 7. Verify Running Containers
+
+```bash
+docker ps
+```
+
+Expected containers:
+
+```text
+airflow-webserver-1
+airflow-scheduler-1
+airflow-postgres-1
+kafka-kraft
+postgres-db
+```
+
+---
+
+### 🔹 8. Open Airflow UI
+
+```text
 http://localhost:8080
+```
 
-### 3. Trigger Pipeline
+Login using the credentials created in previous step.
 
-- Enable DAG  
-- Click ▶ Run  
+Example:
 
-### 4. View Output
+```text
+Username: admin
+Password: admin
+```
 
-- Open validate_data task logs  
-- See:
+---
 
-Total rows in DB: XXX
+### 🔹 9. Trigger the DAG
+
+Inside Airflow UI:
+
+- Enable DAG
+- Click ▶ Run
+- Open Graph View
+
+Pipeline execution order:
+
+```text
+run_producer → run_consumer → run_loader → validate_data
+```
+
+---
+
+### 🔹 10. Validate Final Output
+
+Open:
+
+```text
+validate_data → Logs
+```
+
+Expected output:
+
+```text
+Checking data in PostgreSQL...
+Total rows in DB: 190
+```
+
+---
+
+### 🔹 11. Verify Data in PostgreSQL
+
+Open PostgreSQL container:
+
+```bash
+docker exec -it postgres-db psql -U admin -d crypto
+```
+
+Show tables:
+
+```sql
+\dt
+```
+
+Check inserted rows:
+
+```sql
+SELECT COUNT(*) FROM crypto_stream;
+```
+
+Sample output:
+
+```text
+190
+```
+
+---
+
+## 🛑 Proper Shutdown Procedure
+
+### Stop Airflow
+
+```bash
+cd backend/Pipelining/Airflow
+docker compose down
+```
+
+---
+
+### Stop Kafka
+
+```bash
+cd ../Ingestion
+docker compose down
+```
+
+---
+
+### Stop PostgreSQL
+
+```bash
+docker stop postgres-db
+```
+
+---
+
+## 🔄 Restart Procedure
+
+### Start PostgreSQL
+
+```bash
+docker start postgres-db
+```
+
+### Start Kafka
+
+```bash
+cd backend/Pipelining/Ingestion
+docker compose up -d
+```
+
+### Start Airflow
+
+```bash
+cd ../Airflow
+docker compose up -d
+```
 
 ---
 
