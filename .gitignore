@@ -276,3 +276,10 @@ backend/Pipelining/Airflow/logs/
 # =====================
 *.log
 *.db
+
+# =====================
+# Generated Files
+# =====================
+CryptoGenome_PhaseWise_Documentation.txt
+CryptoGenome_PhaseWise_Documentation.docx
+read_docx.py
