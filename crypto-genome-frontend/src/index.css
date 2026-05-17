@@ -1,0 +1,24 @@
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Orbitron:wght@400;700;900&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-navy:   #0A1628;
+  --color-accent: #00D4FF;
+  --color-cyber:  #00C896;
+}
+
+body {
+  background-color: #0A1628;
+  color: #E2E8F0;
+  font-family: "JetBrains Mono", monospace;
+  overflow-x: hidden;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #0E1F3D; }
+::-webkit-scrollbar-thumb { background: #00D4FF44; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #00D4FF; }
