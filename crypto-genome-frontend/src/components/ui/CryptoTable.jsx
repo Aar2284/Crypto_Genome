@@ -1,4 +1,5 @@
 import { memo, useState, useMemo } from "react"
+import { Search } from "lucide-react"
 import { 
   formatCurrency, 
   formatCompactNumber, 
@@ -54,13 +55,22 @@ const CryptoTableRow = memo(({ asset }) => {
 const CryptoTable = ({ data = [], isLoading = false, error = null }) => {
   // Sort state scaffold for future live-sorting implementation
   const [sortConfig, setSortConfig] = useState({ key: "market_cap", direction: "desc" })
+  const [query, setQuery] = useState("")
 
-  // Memoized sort logic to prevent expensive recalculations
-  const sortedData = useMemo(() => {
+  // Memoized sort and filter logic to prevent expensive recalculations
+  const filteredAndSortedData = useMemo(() => {
     if (!data) return []
-    let sortableData = [...data]
+    
+    // 1. Filter
+    let processedData = data.filter(row => 
+      !query || 
+      row.name?.toLowerCase().includes(query.toLowerCase()) || 
+      row.symbol?.toLowerCase().includes(query.toLowerCase())
+    )
+    
+    // 2. Sort
     if (sortConfig.key) {
-      sortableData.sort((a, b) => {
+      processedData.sort((a, b) => {
         const aVal = a[sortConfig.key] ?? 0
         const bVal = b[sortConfig.key] ?? 0
         if (aVal < bVal) return sortConfig.direction === "asc" ? -1 : 1
@@ -68,8 +78,8 @@ const CryptoTable = ({ data = [], isLoading = false, error = null }) => {
         return 0
       })
     }
-    return sortableData
-  }, [data, sortConfig])
+    return processedData
+  }, [data, sortConfig, query])
 
   // Sort handler
   const handleSort = (key) => {
@@ -107,7 +117,7 @@ const CryptoTable = ({ data = [], isLoading = false, error = null }) => {
     )
   }
 
-  if (sortedData.length === 0) {
+  if (filteredAndSortedData.length === 0 && !query) {
     return (
       <div className="w-full p-8 border border-white/5 rounded-xl bg-navy-800/50 backdrop-blur-sm flex items-center justify-center">
         <span className="font-mono text-sm text-slate-400">No market data available.</span>
@@ -116,8 +126,20 @@ const CryptoTable = ({ data = [], isLoading = false, error = null }) => {
   }
 
   return (
-    <div className="w-full overflow-x-auto rounded-xl border border-white/5 bg-navy-800/80 backdrop-blur-sm relative z-10 shadow-xl shadow-black/20">
-      <table className="w-full text-sm text-left">
+    <div className="w-full relative z-10 flex flex-col gap-4">
+      {/* Search Bar */}
+      <div className="relative">
+        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+        <input
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+          placeholder="Search live assets..."
+          className="w-full md:max-w-sm pl-9 pr-4 py-2 bg-navy-800/60 border border-white/10 rounded-lg text-white font-mono text-sm placeholder:text-slate-600 focus:outline-none focus:border-accent/50 transition-colors"
+        />
+      </div>
+
+      <div className="w-full overflow-x-auto rounded-xl border border-white/5 bg-navy-800/80 backdrop-blur-sm shadow-xl shadow-black/20">
+        <table className="w-full text-sm text-left">
         <thead className="bg-navy-900/80 border-b border-white/10 sticky top-0 z-20">
           <tr>
             <SortableHeader label="Asset" sortKey="name" />
@@ -128,11 +150,20 @@ const CryptoTable = ({ data = [], isLoading = false, error = null }) => {
           </tr>
         </thead>
         <tbody>
-          {sortedData.map((asset) => (
-            <CryptoTableRow key={asset.asset_id} asset={asset} />
-          ))}
+          {filteredAndSortedData.length > 0 ? (
+            filteredAndSortedData.map((asset) => (
+              <CryptoTableRow key={asset.asset_id} asset={asset} />
+            ))
+          ) : (
+            <tr>
+              <td colSpan="5" className="p-8 text-center text-slate-400 font-mono text-sm">
+                No matching assets found for "{query}"
+              </td>
+            </tr>
+          )}
         </tbody>
       </table>
+    </div>
     </div>
   )
 }

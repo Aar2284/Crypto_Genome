@@ -3,6 +3,11 @@ export const createUiNetworkSlice = (set) => ({
   error: null,
   lastUpdated: null,
   refreshCount: 0,
+  wsStatus: "idle",
+  wsLatency: 0,
+  
+  setWsStatus: (status) => set({ wsStatus: status }),
+  setWsLatency: (latency) => set({ wsLatency: latency }),
   
   setLoading: (isLoading) => set({ loading: isLoading }),
   setError: (errMessage) => set({ error: errMessage }),

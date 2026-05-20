@@ -6,12 +6,16 @@ import CryptoTable from "../components/ui/CryptoTable.jsx"
 import LoadingSpinner from "../components/ui/LoadingSpinner.jsx"
 import useCryptoStore from "../store/useCryptoStore.js"
 import { useAutoRefresh } from "../hooks/useAutoRefresh.js"
+import { useLiveData } from "../hooks/useLiveData.js"
 
 export default function Dashboard() {
-  const { cryptoData, metrics, btcHistory, loading, error, fetchAll } = useCryptoStore()
+  const { cryptoData, metrics, btcHistory, loading, error, fetchAll, wsStatus, wsLatency } = useCryptoStore()
   
-  // Polling every 30 seconds, automatically cleans up on unmount and pauses on tab hide
-  useAutoRefresh(fetchAll, 30_000)
+  // Phase 5: Initial hydrate on mount
+  useAutoRefresh(fetchAll, 60_000 * 5) // Fallback slow poll in case WS totally fails for long periods, mostly handled by WS reconnect now
+
+  // Phase 6: Mount streaming hook
+  useLiveData(true)
 
   // Extract BTC price
   const btcPrice = cryptoData?.find(d => d.symbol === "BTC")?.current_price
@@ -46,11 +50,20 @@ export default function Dashboard() {
           </p>
         </div>
         <div className="flex items-center gap-2 md:gap-3 overflow-x-auto pb-2 sm:pb-0">
-           <span className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-mono text-xs whitespace-nowrap">
-             <ShieldCheck size={14} /> System {metrics ? "Online" : "Booting..."}
+           <span className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border font-mono text-xs whitespace-nowrap transition-colors
+             ${wsStatus === "connected" 
+                ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" 
+                : wsStatus === "reconnecting"
+                  ? "bg-yellow-500/10 border-yellow-500/20 text-yellow-400"
+                  : "bg-red-500/10 border-red-500/20 text-red-400"
+             }`}>
+             <ShieldCheck size={14} /> 
+             {wsStatus === "connected" ? "Stream Online" : 
+              wsStatus === "reconnecting" ? "Reconnecting..." : "Stream Offline"}
            </span>
            <span className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-accent/10 border border-accent/20 text-accent font-mono text-xs whitespace-nowrap">
-             <Activity size={14} /> {metrics?.total_rows ? `${formatCompactNumber(metrics.total_rows)} ev/s` : "Waiting for data"}
+             <Activity size={14} /> 
+             {wsLatency > 0 ? `${wsLatency}ms ping` : metrics?.total_rows ? `${formatCompactNumber(metrics.total_rows)} ev/s` : "Waiting for stream"}
            </span>
         </div>
       </div>
