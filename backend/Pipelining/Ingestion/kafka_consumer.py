@@ -17,8 +17,8 @@ def get_db_connection():
     return psycopg2.connect(
         host="localhost",
         database="crypto_genome",
-        user="postgres",
-        password="postgres",
+        user="admin",
+        password="admin",
         port="5432"
     )
 

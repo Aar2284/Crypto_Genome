@@ -5,6 +5,7 @@ from models.market import Asset
 from models.system import SystemMetric
 from datetime import datetime, timezone
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from database.session import AsyncSessionLocal
 
 async def init_db():
