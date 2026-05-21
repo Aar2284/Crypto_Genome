@@ -10,9 +10,6 @@ alembic>=1.12.0
 pandas
 numpy
 scikit-learn
-sqlalchemy
-python-dotenv
 kafka-python
 joblib
-psycopg2-binary
-flask
+websockets

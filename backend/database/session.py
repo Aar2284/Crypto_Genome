@@ -6,6 +6,8 @@ from core.config import settings
 engine = create_async_engine(
     settings.SQLALCHEMY_DATABASE_URI,
     pool_pre_ping=True, # Verifies connection validity before usage
+    pool_size=10,       # Base connection pool
+    max_overflow=20,    # Max burst connections
     echo=False          # Set to true for SQL debugging
 )
 

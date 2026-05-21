@@ -23,5 +23,19 @@ services:
     volumes:
       - kafka_data:/var/lib/kafka/data
 
+  postgres:
+    image: postgres:15-alpine
+    container_name: crypto_postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: crypto_genome
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
 volumes:
   kafka_data:
+  postgres_data:

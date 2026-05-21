@@ -15,6 +15,11 @@ async def init_db():
     print("Seeding initial data...")
     async with AsyncSessionLocal() as session:
         # Check if empty
+        existing = await session.execute(select(Asset))
+        if existing.scalars().first():
+            print("Data already seeded. Skipping.")
+            return
+
         metric = SystemMetric(
             active_streams=5,
             events_per_second=150,

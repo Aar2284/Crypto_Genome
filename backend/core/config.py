@@ -16,10 +16,10 @@ class Settings(BaseSettings):
     POSTGRES_DB: str = "crypto_genome"
     POSTGRES_PORT: str = "5432"
     
-    # Use aiosqlite for zero-config local development without Postgres
+    # Use asyncpg for high-performance async database operations
     @property
     def SQLALCHEMY_DATABASE_URI(self) -> str:
-        return "sqlite+aiosqlite:///./crypto.db"
+        return f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
 
     model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)
 

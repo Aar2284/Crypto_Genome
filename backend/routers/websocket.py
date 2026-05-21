@@ -17,9 +17,6 @@ async def websocket_endpoint(websocket: WebSocket):
             async with AsyncSessionLocal() as db:
                 try:
                     # Get latest row per coin
-                    # Since SQLite doesn't support complex async joins nicely sometimes,
-                    # let's just fetch everything and group in Python or use a simpler query.
-                    # This is just mock data streaming.
                     result = await db.execute(select(Asset).order_by(Asset.symbol))
                     all_rows = result.scalars().all()
                     
