@@ -4,7 +4,7 @@ from datetime import datetime
 
 from core.config import settings
 from core.exceptions import global_exception_handler
-from routers import market, system, websocket
+from routers import market, system, websocket, genome, history
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -27,6 +27,8 @@ app.add_exception_handler(Exception, global_exception_handler)
 # 3. Router Governance: Include thin routers
 app.include_router(market.router, prefix=f"{settings.API_V1_STR}/market", tags=["market"])
 app.include_router(system.router, prefix=f"{settings.API_V1_STR}/system", tags=["system"])
+app.include_router(genome.router, prefix=f"{settings.API_V1_STR}/genome", tags=["genome"])
+app.include_router(history.router, prefix=f"{settings.API_V1_STR}/history", tags=["history"])
 app.include_router(websocket.router, prefix="/ws", tags=["websocket"])
 
 # 4. Observability & Health-Check Preparation

@@ -18,6 +18,7 @@ class Asset(Base):
     
     last_updated_at = Column(DateTime(timezone=True), default=func.now(), onupdate=func.now(), nullable=False)
     pipeline_status = Column(String, default="active", nullable=False)
+    data_source = Column(String, default="binance", nullable=True)  # binance|kucoin|gate|delisted|no_live_data
     latency_ms = Column(Integer, default=0, nullable=False)
 
 class AssetHistory(Base):
