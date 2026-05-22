@@ -4,8 +4,10 @@ All symbol-to-exchange mappings are defined here and imported by every producer.
 No API keys required — all sources use public WebSocket endpoints.
 """
 
+import os
+
 # ─── Kafka ────────────────────────────────────────────────────────────────────
-KAFKA_BOOTSTRAP = "localhost:9092"
+KAFKA_BOOTSTRAP = os.getenv("KAFKA_HOST", "localhost:9092")
 KAFKA_TOPIC = "crypto_genome"
 
 # ─── Binance (~54 coins) ──────────────────────────────────────────────────────

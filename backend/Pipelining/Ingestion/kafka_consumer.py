@@ -21,8 +21,10 @@ from datetime import datetime, timezone
 from kafka import KafkaConsumer
 from kafka.errors import NoBrokersAvailable
 
+import os
+
 # Kafka settings
-KAFKA_BOOTSTRAP = "localhost:9092"
+KAFKA_BOOTSTRAP = os.getenv("KAFKA_HOST", "localhost:9092")
 KAFKA_TOPIC = "crypto_genome"
 
 
@@ -49,7 +51,7 @@ def create_consumer() -> KafkaConsumer:
 
 def get_db_connection() -> psycopg2.extensions.connection:
     return psycopg2.connect(
-        host="localhost",
+        host=os.getenv("PG_HOST", "localhost"),
         database="crypto_genome",
         user="admin",
         password="admin",

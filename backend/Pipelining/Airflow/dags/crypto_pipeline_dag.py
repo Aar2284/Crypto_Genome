@@ -1,41 +1,29 @@
 from airflow import DAG
 from airflow.operators.python import PythonOperator
+from airflow.operators.bash import BashOperator
 from datetime import datetime
-import subprocess
 import psycopg2
-
-def run_producer():
-    print("Producer started...")
-    subprocess.run(["python", "/opt/airflow/project/Ingestion/kafka_producer.py"])
-    print("Data sent to Kafka")
-
-def run_consumer():
-    print("Consumer running...")
-    subprocess.run(["python", "/opt/airflow/project/Ingestion/kafka_consumer.py"])
-    print("Data saved to CSV")
-
-def run_loader():
-    print("Loading to PostgreSQL...")
-    subprocess.run(["python", "/opt/airflow/project/Warehouse/load_to_postgres.py"])
-    print("Data inserted successfully")
 
 def validate_data():
     print("Checking data in PostgreSQL...")
-
     conn = psycopg2.connect(
         host="host.docker.internal",
-        database="crypto",
+        database="crypto_genome",
         user="admin",
-        password="admin"
+        password="admin",
+        port="5432"
     )
-
     cur = conn.cursor()
-    cur.execute("SELECT COUNT(*) FROM crypto_stream;")
-
+    cur.execute("SELECT COUNT(*) FROM asset_history;")
     count = cur.fetchone()[0]
-
-    print(f"Total rows in DB: {count}")
-
+    print(f"Total rows in asset_history: {count}")
+    
+    cur.execute("SELECT symbol, current_price, last_updated_at FROM assets WHERE pipeline_status='active' LIMIT 5;")
+    rows = cur.fetchall()
+    print("Latest snapshot of live assets:")
+    for r in rows:
+        print(r)
+        
     conn.close()
 
 with DAG(
@@ -45,9 +33,29 @@ with DAG(
     catchup=False
 ) as dag:
 
-    producer = PythonOperator(task_id='run_producer', python_callable=run_producer)
-    consumer = PythonOperator(task_id='run_consumer', python_callable=run_consumer)
-    loader = PythonOperator(task_id='run_loader', python_callable=run_loader)
-    validate = PythonOperator(task_id='validate_data',python_callable=validate_data)
+    # Run consumer and producer concurrently so they can exchange messages
+    run_pipeline = BashOperator(
+        task_id='run_pipeline',
+        bash_command='''
+        export KAFKA_HOST="host.docker.internal:9092"
+        export PG_HOST="host.docker.internal"
+        
+        echo "Starting Consumer in background..."
+        timeout 30s python /opt/airflow/project/Ingestion/kafka_consumer.py &
+        
+        sleep 5
+        
+        echo "Starting Producer in background..."
+        timeout 20s python /opt/airflow/project/Ingestion/kafka_producer_binance.py &
+        
+        wait
+        exit 0
+        '''
+    )
 
-    producer >> consumer >> loader >> validate
+    validate = PythonOperator(
+        task_id='validate_data',
+        python_callable=validate_data
+    )
+
+    run_pipeline >> validate
