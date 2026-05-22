@@ -22,26 +22,9 @@ api.interceptors.request.use(
 // ── Response interceptor ─────────────────────────────────
 api.interceptors.response.use(
   (response) => {
-    // Validate or normalize response shape if needed
-    // Normalize CryptoRecord to match UI expectation where necessary
-    // Backend schema: id, coin, symbol, price, volume, change24h, market_cap, timestamp
-    // UI schema: asset_id, name, symbol, current_price, volume_24h, change_24h_pct, market_cap, last_updated_at
-    if (Array.isArray(response.data)) {
-      response.data = response.data.map(item => {
-        if (item.coin && item.price !== undefined) {
-          return {
-            ...item,
-            asset_id: String(item.id),
-            name: item.coin,
-            current_price: item.price,
-            volume_24h: item.volume,
-            change_24h_pct: item.change24h,
-            last_updated_at: item.timestamp
-          }
-        }
-        return item
-      })
-    }
+    // Backend (Pydantic AssetResponse schema) already returns correct field names:
+    // asset_id, name, symbol, current_price, volume_24h, change_24h_pct, market_cap, last_updated_at
+    // No normalization needed — pass data through directly.
     return response.data
   },
   (error) => {
@@ -74,18 +57,18 @@ api.interceptors.response.use(
 // Adding AbortSignal support for request cancellation
 
 export const fetchLatestCrypto = (signal) => 
-  api.get("/api/latest", { signal })
+  api.get("/api/v1/market/assets", { signal })
 
 export const fetchAllCrypto = (limit = 100, signal) => 
-  api.get(`/api/crypto?limit=${limit}`, { signal })
+  api.get(`/api/v1/market/assets?limit=${limit}`, { signal })
 
 export const fetchMetrics = (signal) => 
-  api.get("/api/metrics", { signal })
+  api.get("/api/v1/system/metrics", { signal })
 
 export const fetchRowCount = (signal) => 
-  api.get("/api/row-count", { signal })
+  api.get("/api/v1/system/metrics", { signal })
 
 export const fetchPriceHistory = (symbol, hours = 24, signal) =>
-  api.get(`/api/history/${symbol}?hours=${hours}`, { signal })
+  api.get(`/api/v1/market/assets/${symbol}/history?limit=${hours}`, { signal })
 
 export default api

@@ -6,11 +6,17 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      // Proxy API calls to backend (avoids CORS in dev)
+      // Proxy REST API calls to FastAPI backend
       "/api": {
         target: "http://localhost:8000",
         changeOrigin: true,
         secure: false,
+      },
+      // Proxy WebSocket connection to FastAPI backend
+      "/ws": {
+        target: "ws://localhost:8000",
+        ws: true,
+        changeOrigin: true,
       },
     },
   },

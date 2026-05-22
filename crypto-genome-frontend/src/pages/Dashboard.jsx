@@ -85,22 +85,24 @@ export default function Dashboard() {
           delay={0.1}
         />
         <StatCard 
-          title="Total Rows" 
-          value={metrics?.total_rows?.toLocaleString() ?? "—"} 
+          title="Active Streams" 
+          value={metrics?.active_streams?.toLocaleString() ?? "—"} 
           icon={Database}
           accentColor="#00D4FF"
           delay={0.2}
         />
         <StatCard 
-          title="Pipeline Runs" 
-          value={metrics?.pipeline_runs?.toLocaleString() ?? "—"} 
+          title="Events / Sec" 
+          value={metrics?.events_per_second?.toLocaleString() ?? "—"} 
           icon={Server}
           accentColor="#7B2FBE"
           delay={0.3}
         />
         <StatCard 
-          title="System Uptime" 
-          value={metrics?.uptime_pct ? `${metrics.uptime_pct}%` : "—"} 
+          title="API Latency" 
+          value={metrics?.total_latency_ms ? `${metrics.total_latency_ms}ms` : "—"} 
+          change={metrics?.system_health ?? ""}
+          changeType="up"
           icon={Cpu}
           accentColor="#00C896"
           delay={0.4}
