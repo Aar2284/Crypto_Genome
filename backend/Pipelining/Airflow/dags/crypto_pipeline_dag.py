@@ -6,11 +6,12 @@ import psycopg2
 
 def validate_data():
     print("Checking data in PostgreSQL...")
+    import os
     conn = psycopg2.connect(
-        host="host.docker.internal",
+        host=os.getenv("PG_HOST", "host.docker.internal"),
         database="crypto_genome",
-        user="admin",
-        password="admin",
+        user=os.getenv("PG_USER", "postgres"),
+        password=os.getenv("PG_PASSWORD", "postgres"),
         port="5432"
     )
     cur = conn.cursor()

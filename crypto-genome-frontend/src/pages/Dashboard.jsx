@@ -1,3 +1,4 @@
+import { Suspense } from "react"
 import { Activity, Zap, Server, ShieldCheck, Database, Cpu } from "lucide-react"
 import { formatCurrency, formatCompactNumber } from "../utils/formatters.js"
 import StatCard from "../components/ui/StatCard.jsx"
@@ -7,6 +8,7 @@ import LoadingSpinner from "../components/ui/LoadingSpinner.jsx"
 import useCryptoStore from "../store/useCryptoStore.js"
 import { useAutoRefresh } from "../hooks/useAutoRefresh.js"
 import { useLiveData } from "../hooks/useLiveData.js"
+import CryptoGlobe from "../components/3d/CryptoGlobe.jsx"
 
 export default function Dashboard() {
   const { cryptoData, metrics, btcHistory, loading, error, fetchAll, wsStatus, wsLatency } = useCryptoStore()
@@ -129,17 +131,16 @@ export default function Dashboard() {
           </div>
         </div>
         
-        {/* Secondary Analytics Container */}
-        <div className="col-span-1 rounded-xl bg-navy-800/80 backdrop-blur-sm border border-white/5 p-4 md:p-6 shadow-xl shadow-black/20 flex flex-col justify-center items-center min-h-[300px]">
-             <div className="text-center space-y-4 w-full">
-               <div className="w-16 h-16 mx-auto rounded-full border border-dashed border-slate-600 flex items-center justify-center">
-                  <Activity size={24} className="text-slate-500" />
-               </div>
-               <h3 className="font-display text-slate-300">Market Dominance</h3>
-               <p className="text-xs font-mono text-slate-500 max-w-[200px] mx-auto">
-                 Secondary chart systems will orchestrate here.
-               </p>
-             </div>
+        {/* Secondary Analytics Container (Crypto Globe) */}
+        <div className="col-span-1 rounded-xl bg-navy-800/80 backdrop-blur-sm border border-white/5 p-4 md:p-6 shadow-xl shadow-black/20 flex flex-col relative min-h-[300px]">
+           <div className="flex items-center justify-between mb-4 shrink-0 relative z-10">
+             <h2 className="text-base md:text-lg font-display text-white font-bold tracking-wide">GLOBAL MARKET</h2>
+           </div>
+           <div className="flex-1 w-full h-full min-h-[250px] relative">
+             <Suspense fallback={<LoadingSpinner size={40} />}>
+               <CryptoGlobe />
+             </Suspense>
+           </div>
         </div>
       </div>
 

@@ -3,12 +3,14 @@ import psycopg2
 
 app = Flask(__name__)
 
+import os
+
 DB_CONFIG = {
-    "host": "localhost",
+    "host": os.getenv("PG_HOST", "localhost"),
     "port": 5432,
-    "database": "crypto",
-    "user": "admin",
-    "password": "admin"
+    "database": "crypto_genome",
+    "user": os.getenv("PG_USER", "postgres"),
+    "password": os.getenv("PG_PASSWORD", "postgres")
 }
 
 def get_connection():

@@ -7,11 +7,13 @@ Run ONCE from backend/ dir.
 """
 import psycopg2
 
+import os
+
 conn = psycopg2.connect(
-    host='localhost',
+    host=os.getenv('PG_HOST', 'localhost'),
     database='crypto_genome',
-    user='admin',
-    password='admin',
+    user=os.getenv('PG_USER', 'postgres'),
+    password=os.getenv('PG_PASSWORD', 'postgres'),
     port='5432'
 )
 conn.autocommit = False

@@ -2,13 +2,14 @@ import pandas as pd
 import psycopg2
 
 INPUT_PATH = "../Storage/stream_output.csv"
+import os
 
 DB_CONFIG = {
-    "host": "localhost",
+    "host": os.getenv("PG_HOST", "localhost"),
     "port": 5432,
-    "database": "crypto",
-    "user": "admin",
-    "password": "admin"
+    "database": "crypto_genome",  # Updated to match other files which use crypto_genome
+    "user": os.getenv("PG_USER", "postgres"),
+    "password": os.getenv("PG_PASSWORD", "postgres")
 }
 
 def load_data():

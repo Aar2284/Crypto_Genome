@@ -19,7 +19,7 @@ import psycopg2
 import time
 from datetime import datetime, timezone
 from kafka import KafkaConsumer
-from kafka.errors import NoBrokersAvailable
+from kafka.errors import BrokerNotAvailableError
 
 import os
 
@@ -53,8 +53,8 @@ def get_db_connection() -> psycopg2.extensions.connection:
     return psycopg2.connect(
         host=os.getenv("PG_HOST", "localhost"),
         database="crypto_genome",
-        user="admin",
-        password="admin",
+        user=os.getenv("PG_USER", "postgres"),
+        password=os.getenv("PG_PASSWORD", "postgres"),
         port="5432",
     )
 
