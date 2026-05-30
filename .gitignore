@@ -253,8 +253,9 @@ Thumbs.db
 *.db
 
 # =====================
-# Frontend (if added later)
+# Frontend (lives on frontend branch — NOT tracked on main)
 # =====================
+crypto-genome-frontend/
 node_modules/
 dist/
 build/
