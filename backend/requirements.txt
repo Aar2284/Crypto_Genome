@@ -11,5 +11,6 @@ pandas
 numpy
 scikit-learn
 kafka-python
+aiohttp
 joblib
 websockets

@@ -13,6 +13,7 @@ class AssetBase(BaseModel):
     volume_24h: Optional[float] = None
     market_cap: Optional[float] = None
     pipeline_status: str
+    data_source: Optional[str] = None
     latency_ms: int
 
 class AssetResponse(AssetBase):

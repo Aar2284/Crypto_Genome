@@ -15,22 +15,34 @@ if (-Not (Test-Path $python)) {
     exit 1
 }
 
+$ingestionDir = Join-Path $PSScriptRoot "Pipelining\Ingestion"
+
 Write-Host "Starting Consumer..." -ForegroundColor Cyan
-Start-Process -NoNewWindow -FilePath $python -ArgumentList "Pipelining/Ingestion/kafka_consumer.py"
+Start-Process -NoNewWindow -FilePath $python `
+    -ArgumentList "Pipelining/Ingestion/kafka_consumer.py" `
+    -WorkingDirectory $PSScriptRoot
 
 Start-Sleep -Seconds 2
 
 Write-Host "Starting Binance Producer..." -ForegroundColor Green
-Start-Process -NoNewWindow -FilePath $python -ArgumentList "Pipelining/Ingestion/kafka_producer_binance.py"
+Start-Process -NoNewWindow -FilePath $python `
+    -ArgumentList "kafka_producer_binance.py" `
+    -WorkingDirectory $ingestionDir
 
 Write-Host "Starting KuCoin Producer..." -ForegroundColor Yellow
-Start-Process -NoNewWindow -FilePath $python -ArgumentList "Pipelining/Ingestion/kafka_producer_kucoin.py"
+Start-Process -NoNewWindow -FilePath $python `
+    -ArgumentList "kafka_producer_kucoin.py" `
+    -WorkingDirectory $ingestionDir
 
 Write-Host "Starting Gate.io Producer..." -ForegroundColor Magenta
-Start-Process -NoNewWindow -FilePath $python -ArgumentList "Pipelining/Ingestion/kafka_producer_gate.py"
+Start-Process -NoNewWindow -FilePath $python `
+    -ArgumentList "kafka_producer_gate.py" `
+    -WorkingDirectory $ingestionDir
 
 Write-Host "Starting Bitfinex Producer (Fallback)..." -ForegroundColor DarkCyan
-Start-Process -NoNewWindow -FilePath $python -ArgumentList "Pipelining/Ingestion/kafka_producer_bitfinex.py"
+Start-Process -NoNewWindow -FilePath $python `
+    -ArgumentList "kafka_producer_bitfinex.py" `
+    -WorkingDirectory $ingestionDir
 
 Write-Host "=================================================="
 Write-Host " Pipeline started in background."
