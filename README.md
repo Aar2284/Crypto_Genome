@@ -23,31 +23,31 @@ It demonstrates:
 
 ## 🧠 Architecture
 
-Producer → Kafka → Consumer → CSV → PostgreSQL → Airflow Orchestration
+WebSocket Producers (Binance, KuCoin, Gate.io) → Kafka → Consumer → PostgreSQL (Assets & History) → FastAPI Backend → React Frontend
 
 ---
 
 ## ⚙️ How the Pipeline Works
 
-### 🔹 1. Data Ingestion (Kafka)
+### 🔹 1. Data Ingestion (Kafka & WebSockets)
 
 ![Kafka](https://img.shields.io/badge/Kafka-Producer/Consumer-black?logo=apachekafka)
 
-- Producer sends crypto data
-- Kafka acts as a message broker
-- Consumer reads and processes the stream
+- Four independent websocket producers fetch real-time tick data (Binance, KuCoin, Gate.io, Bitfinex)
+- Kafka acts as a high-throughput message broker
+- Consumer reads and processes the unified stream
 
-👉 Simulates real-time streaming
+👉 Production-grade real-time streaming
 
 ---
 
-### 🔹 2. Data Processing
+### 🔹 2. Data Processing & API
 
-![Python](https://img.shields.io/badge/Python-Processing-blue?logo=python)
+![Python](https://img.shields.io/badge/Python-FastAPI-blue?logo=fastapi)
 
-- Consumer transforms incoming data
-- Stores processed data into a CSV file
-- Acts as intermediate storage layer
+- Consumer transforms incoming data, calculates metrics, and handles database failovers
+- FastAPI backend provides a RESTful and WebSocket API layer for the frontend
+- Validates data streams on the fly
 
 ---
 
@@ -55,9 +55,9 @@ Producer → Kafka → Consumer → CSV → PostgreSQL → Airflow Orchestration
 
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Data%20Warehouse-blue?logo=postgresql)
 
-- Data is inserted into PostgreSQL
-- Structured storage for querying
-- Enables analysis and validation
+- Data is upserted into `assets` (real-time snapshot) and `asset_history` (time-series ticks)
+- Pre-calculated quantitative datasets loaded into `coin_ohlcv` and genome tables
+- Structured storage for ultra-fast frontend querying
 
 ---
 
@@ -80,7 +80,7 @@ run_producer → run_consumer → run_loader → validate_data
 - Final task checks data in PostgreSQL
 - Displays:
 
-Total rows in DB: 190
+Total rows in asset_history: 1400+ (streaming live)
 
 👉 Confirms successful pipeline execution
 
@@ -90,7 +90,7 @@ Total rows in DB: 190
 
 ![Docker](https://img.shields.io/badge/Docker-Containers-blue?logo=docker)
 
-All services run in containers:
+All core data infrastructure runs in containers:
 
 - Kafka (KRaft mode)
 - PostgreSQL
@@ -102,26 +102,24 @@ All services run in containers:
 
 ## 📂 Project Structure
 
-```
+```text
 backend/
 │
-├── Ingestion/
-│   ├── kafka_producer.py
-│   ├── kafka_consumer.py
-│
-├── Warehouse/
-│   ├── load_to_postgres.py
-│
+├── core/, database/, models/, routers/, schemas/, services/ (FastAPI Application)
 ├── Pipelining/
 │   ├── Airflow/
-│   │   ├── dags/
-│   │   │   └── crypto_pipeline_dag.py
-│   │   ├── docker-compose.yml
-│   │
-│   ├── Ingestion/
+│   │   ├── dags/crypto_pipeline_dag.py
 │   │   └── docker-compose.yml
-│
-├── requirements.txt
+│   ├── Ingestion/
+│   │   ├── kafka_producer_binance.py
+│   │   ├── kafka_producer_kucoin.py
+│   │   ├── kafka_producer_gate.py
+│   │   ├── kafka_consumer.py
+│   └── docker-compose.yml (Kafka + Postgres)
+├── start_pipeline.ps1
+└── requirements.txt
+
+crypto-genome-frontend/ (React UI)
 ```
 
 ---
@@ -145,54 +143,49 @@ pip install -r requirements.txt
 
 ---
 
-### 🔹 3. Start PostgreSQL Database
+### 🔹 3. Start Data Infrastructure (Kafka & PostgreSQL)
+
+Move into the Pipelining folder:
 
 ```bash
-docker start postgres-db
-```
-
-Verify:
-
-```bash
-docker ps
-```
-
----
-
-### 🔹 4. Start Kafka Infrastructure
-
-Move into ingestion folder:
-
-```bash
-cd Pipelining/Ingestion
-```
-
-Start Kafka container:
-
-```bash
+cd Pipelining
 docker compose up -d
 ```
 
-Verify Kafka is running:
+Verify containers (`kafka-kraft` and `crypto_postgres`) are running:
 
 ```bash
 docker ps
 ```
 
-You should see:
+---
 
-```text
-kafka-kraft
+### 🔹 4. Start the Data Pipeline
+
+Run the PowerShell script from the `backend/` directory to launch the Kafka Consumer and all WebSocket Producers in the background:
+
+```powershell
+.\start_pipeline.ps1
 ```
 
 ---
 
-### 🔹 5. Start Airflow Infrastructure
+### 🔹 5. Start the FastAPI Server
+
+From the `backend/` directory:
+
+```bash
+uvicorn main:app --host 0.0.0.0 --port 8000
+```
+
+---
+
+### 🔹 6. Start Airflow Infrastructure
 
 Move into Airflow folder:
 
 ```bash
-cd ../Airflow
+cd Pipelining/Airflow
 ```
 
 Start Airflow services:
@@ -209,7 +202,7 @@ This starts:
 
 ---
 
-### 🔹 6. Create Airflow Admin User (First Time Setup)
+### 🔹 7. Create Airflow Admin User (First Time Setup)
 
 Run this command after Airflow containers are running:
 
@@ -237,7 +230,7 @@ docker exec -it airflow-airflow-webserver-1 airflow users create `
 
 ---
 
-### 🔹 7. Verify Running Containers
+### 🔹 8. Verify Running Containers
 
 ```bash
 docker ps
@@ -250,12 +243,12 @@ airflow-webserver-1
 airflow-scheduler-1
 airflow-postgres-1
 kafka-kraft
-postgres-db
+crypto_postgres
 ```
 
 ---
 
-### 🔹 8. Open Airflow UI
+### 🔹 9. Open Airflow UI
 
 ```text
 http://localhost:8080
@@ -272,7 +265,7 @@ Password: admin
 
 ---
 
-### 🔹 9. Trigger the DAG
+### 🔹 10. Trigger the DAG
 
 Inside Airflow UI:
 
@@ -288,7 +281,7 @@ run_producer → run_consumer → run_loader → validate_data
 
 ---
 
-### 🔹 10. Validate Final Output
+### 🔹 11. Validate Final Output
 
 Open:
 
@@ -305,12 +298,12 @@ Total rows in DB: 190
 
 ---
 
-### 🔹 11. Verify Data in PostgreSQL
+### 🔹 12. Verify Data in PostgreSQL
 
 Open PostgreSQL container:
 
 ```bash
-docker exec -it postgres-db psql -U admin -d crypto
+docker exec -it crypto_postgres psql -U postgres -d crypto_genome
 ```
 
 Show tables:
@@ -319,16 +312,16 @@ Show tables:
 \dt
 ```
 
-Check inserted rows:
+Check inserted rows (streaming data):
 
 ```sql
-SELECT COUNT(*) FROM crypto_stream;
+SELECT COUNT(*) FROM asset_history;
 ```
 
 Sample output:
 
 ```text
-190
+1413
 ```
 
 ---
@@ -344,35 +337,27 @@ docker compose down
 
 ---
 
-### Stop Kafka
+### Stop Data Infrastructure (Kafka & Postgres)
 
 ```bash
-cd ../Ingestion
+cd backend/Pipelining
 docker compose down
 ```
 
 ---
 
-### Stop PostgreSQL
+### Stop Python Processes
 
-```bash
-docker stop postgres-db
-```
+Close the terminal running `uvicorn` and kill the background Python processes launched by `start_pipeline.ps1`.
 
 ---
 
 ## 🔄 Restart Procedure
 
-### Start PostgreSQL
+### Start Data Infrastructure (Kafka & Postgres)
 
 ```bash
-docker start postgres-db
-```
-
-### Start Kafka
-
-```bash
-cd backend/Pipelining/Ingestion
+cd backend/Pipelining
 docker compose up -d
 ```
 
@@ -388,26 +373,30 @@ docker compose up -d
 ## 📊 Sample Query
 
 ```sql
-SELECT * FROM crypto_stream LIMIT 5;
+SELECT * FROM asset_history ORDER BY timestamp DESC LIMIT 5;
 ```
 
 ---
 
 ## 🧰 Tech Stack (by Role)
 
-### 🟦 Data Processing
+### 🟦 API & Processing
+- FastAPI
+- websockets
 - pandas
 - numpy
 
-### 🟧 Machine Learning (future scope)
+### 🟧 Quantitative Models
 - scikit-learn
 - joblib
 
 ### 🟩 Streaming
 - kafka-python
+- aiohttp
 
 ### 🟥 Database
-- psycopg2
+- SQLAlchemy
+- asyncpg / psycopg2
 - PostgreSQL (Docker)
 
 ### 🟪 Orchestration
@@ -430,9 +419,9 @@ SELECT * FROM crypto_stream LIMIT 5;
 
 ## 🚀 Future Improvements
 
-- Add real-time API ingestion
-- Build dashboard (Streamlit / React)
-- Add data validation layer
+- Integrate advanced machine learning predictions
+- Expand to non-crypto markets
+- Add automated alerting system
 - Deploy on cloud (AWS/GCP)
 
 ---
