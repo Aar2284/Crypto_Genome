@@ -424,6 +424,14 @@ SELECT * FROM asset_history ORDER BY timestamp DESC LIMIT 5;
 - Add automated alerting system
 - Deploy on cloud (AWS/GCP)
 
+## 🛑 Troubleshooting
+
+### Ports Already in Use
+If you encounter errors about ports 8000, 5432, or 8080 being in use, ensure no other services are running on those ports. You can change port mappings in `docker-compose.yml` if necessary.
+
+### Kafka Connection Refused
+If the producer scripts cannot connect to Kafka, wait a few more seconds for the Kafka broker to fully start up and elect a KRaft leader.
+
 ---
 
 ## 👨‍💻 Author
