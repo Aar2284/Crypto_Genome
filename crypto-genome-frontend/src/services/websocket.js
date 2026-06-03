@@ -13,7 +13,7 @@ export class WebSocketClient {
     this.ws = null
     this.state = WS_STATES.IDLE
     this.reconnectAttempts = 0
-    this.maxReconnectAttempts = 10
+    this.maxReconnectAttempts = 3  // Fail fast so mock data kicks in without long delay
     this.reconnectTimer = null
     this.intentionalDisconnect = false
     this.lastLatencyMs = 0

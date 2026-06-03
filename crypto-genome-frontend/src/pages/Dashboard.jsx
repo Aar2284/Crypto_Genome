@@ -6,36 +6,16 @@ import PriceLineChart from "../components/charts/PriceLineChart.jsx"
 import CryptoTable from "../components/ui/CryptoTable.jsx"
 import LoadingSpinner from "../components/ui/LoadingSpinner.jsx"
 import useCryptoStore from "../store/useCryptoStore.js"
-import { useAutoRefresh } from "../hooks/useAutoRefresh.js"
-import { useLiveData } from "../hooks/useLiveData.js"
 import CryptoGlobe from "../components/3d/CryptoGlobe.jsx"
 
 export default function Dashboard() {
-  const { cryptoData, metrics, btcHistory, loading, error, fetchAll, wsStatus, wsLatency } = useCryptoStore()
-  
-  // Phase 5: Initial hydrate on mount
-  useAutoRefresh(fetchAll, 60_000 * 5) // Fallback slow poll in case WS totally fails for long periods, mostly handled by WS reconnect now
-
-  // Phase 6: Mount streaming hook
-  useLiveData(true)
+  const { cryptoData, metrics, btcHistory, loading, wsStatus, wsLatency } = useCryptoStore()
 
   // Extract BTC price
   const btcPrice = cryptoData?.find(d => d.symbol === "BTC")?.current_price
   
   // Calculate global volume dynamically from live data
   const globalVolume = cryptoData?.reduce((acc, curr) => acc + (curr.volume_24h || 0), 0)
-
-  if (error) {
-    return (
-      <div className="flex items-center justify-center min-h-[500px]">
-        <div className="bg-red-500/10 border border-red-500/20 p-8 rounded-xl max-w-lg text-center">
-          <ShieldCheck className="mx-auto text-red-400 mb-4" size={48} />
-          <h2 className="text-red-400 font-display text-xl mb-2">SYSTEM OFFLINE</h2>
-          <p className="text-slate-400 font-mono text-sm">{error}</p>
-        </div>
-      </div>
-    )
-  }
 
   return (
     <div className="space-y-6 md:space-y-8 max-w-[1600px] mx-auto pb-12 px-4 md:px-0">
@@ -55,17 +35,14 @@ export default function Dashboard() {
            <span className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border font-mono text-xs whitespace-nowrap transition-colors
              ${wsStatus === "connected" 
                 ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" 
-                : wsStatus === "reconnecting"
-                  ? "bg-yellow-500/10 border-yellow-500/20 text-yellow-400"
-                  : "bg-red-500/10 border-red-500/20 text-red-400"
+                : "bg-amber-500/10 border-amber-500/20 text-amber-400"
              }`}>
              <ShieldCheck size={14} /> 
-             {wsStatus === "connected" ? "Stream Online" : 
-              wsStatus === "reconnecting" ? "Reconnecting..." : "Stream Offline"}
+             {wsStatus === "connected" ? "Stream Online" : "Demo Mode"}
            </span>
            <span className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-accent/10 border border-accent/20 text-accent font-mono text-xs whitespace-nowrap">
              <Activity size={14} /> 
-             {wsLatency > 0 ? `${wsLatency}ms ping` : metrics?.total_rows ? `${formatCompactNumber(metrics.total_rows)} ev/s` : "Waiting for stream"}
+             {wsLatency > 0 ? `${wsLatency}ms ping` : metrics?.events_per_second ? `${metrics.events_per_second.toLocaleString()} ev/s` : "Mock Data"}
            </span>
         </div>
       </div>

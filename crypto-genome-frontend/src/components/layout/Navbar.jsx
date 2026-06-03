@@ -1,6 +1,7 @@
 import { NavLink } from "react-router-dom"
 import { Activity, Database, GitBranch, LayoutDashboard, Bell } from "lucide-react"
 import { motion } from "framer-motion"
+import useCryptoStore from "../../store/useCryptoStore.js"
 
 const navLinks = [
   { to: "/",         icon: LayoutDashboard, label: "Dashboard"  },
@@ -10,6 +11,9 @@ const navLinks = [
 ]
 
 export default function Navbar() {
+  const wsStatus = useCryptoStore((s) => s.wsStatus)
+  const isLive = wsStatus === "connected"
+
   return (
     <motion.nav
       initial={{ y: -80 }} animate={{ y: 0 }}
@@ -47,11 +51,13 @@ export default function Navbar() {
         ))}
       </div>
 
-      {/* Right side */}
+      {/* Right side — status indicator */}
       <div className="flex items-center gap-2 md:gap-3">
         <div className="flex items-center gap-1.5 shrink-0">
-          <span className="w-2 h-2 rounded-full bg-cyber animate-pulse" />
-          <span className="text-cyber text-[10px] md:text-xs font-mono hidden sm:inline">LIVE</span>
+          <span className={`w-2 h-2 rounded-full ${isLive ? "bg-cyber animate-pulse" : "bg-amber-400"}`} />
+          <span className={`text-[10px] md:text-xs font-mono hidden sm:inline ${isLive ? "text-cyber" : "text-amber-400"}`}>
+            {isLive ? "LIVE" : "DEMO"}
+          </span>
         </div>
         <button className="p-2 rounded-lg text-slate-400
                            hover:text-accent hover:bg-accent/10
