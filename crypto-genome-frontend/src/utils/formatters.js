@@ -44,3 +44,6 @@ export const getTrendDirection = (value) => {
   if (value < 0) return "down"
   return "neutral"
 }
+
+// Alias — some older components import formatNumber
+export const formatNumber = formatCompactNumber

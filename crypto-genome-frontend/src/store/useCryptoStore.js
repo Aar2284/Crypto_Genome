@@ -10,23 +10,24 @@ const useCryptoStore = create((set, get) => ({
   ...createMetricsSlice(set, get),
   ...createUiNetworkSlice(set, get),
 
-  // Orchestrator Action for Fetching All Required Dashboard Data
+  backendReachable: false,
+
+  // Called on startup — ONLY loads mock data, no network requests
+  // Real data is fetched only once the WebSocket confirms backend is alive
+  initWithMockData: () => {
+    set({
+      cryptoData: getMockCryptoData(),
+      metrics: getMockMetrics(),
+      btcHistory: getMockBtcHistory(),
+      loading: false,
+      lastUpdated: new Date().toISOString(),
+      backendReachable: false,
+    })
+  },
+
+  // Called only after WebSocket connects (backend confirmed alive)
   fetchAll: async (signal) => {
-    const isInitialLoad = get().cryptoData.length === 0
-
-    if (isInitialLoad) {
-      // Pre-load mock data immediately so the dashboard is never blank
-      set({
-        cryptoData: getMockCryptoData(),
-        metrics: getMockMetrics(),
-        btcHistory: getMockBtcHistory(),
-        loading: false,
-        lastUpdated: new Date().toISOString(),
-      })
-    }
-
     get().clearError()
-
     try {
       const [cryptoData, metrics, btcHistory] = await Promise.all([
         fetchLatestCrypto(signal),
@@ -42,17 +43,12 @@ const useCryptoStore = create((set, get) => ({
         lastUpdated: new Date().toISOString(),
         refreshCount: state.refreshCount + 1,
         error: null,
+        backendReachable: true,
       }))
     } catch (err) {
-      if (err.status === 499) return // Request was cancelled — ignore
-
-      // Backend offline: silently keep mock data, don't show error in the UI
-      console.warn("[API] Backend unavailable, showing mock data:", err.message)
-      set((state) => ({
-        loading: false,
-        refreshCount: state.refreshCount + 1,
-        // Keep whatever data we already have (mock or real)
-      }))
+      if (err.status === 499) return
+      // Keep existing data (mock or last real), just mark unreachable
+      set({ backendReachable: false, loading: false })
     }
   },
 }))
