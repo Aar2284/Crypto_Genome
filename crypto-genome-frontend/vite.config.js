@@ -11,12 +11,19 @@ export default defineConfig({
         target: "http://localhost:8000",
         changeOrigin: true,
         secure: false,
+        configure: (proxy) => {
+          // Silence ECONNREFUSED noise when backend is offline — app handles this gracefully
+          proxy.on("error", () => {})
+        },
       },
       // Proxy WebSocket connection to FastAPI backend
       "/ws": {
         target: "ws://localhost:8000",
         ws: true,
         changeOrigin: true,
+        configure: (proxy) => {
+          proxy.on("error", () => {})
+        },
       },
     },
   },
