@@ -9,26 +9,15 @@ import { useLiveData } from "./hooks/useLiveData.js"
 import useCryptoStore from "./store/useCryptoStore.js"
 
 function AppBootstrap() {
-  const fetchAll = useCryptoStore((s) => s.fetchAll)
+  const initWithMockData = useCryptoStore((s) => s.initWithMockData)
 
-  // Initial data load (also sets up mock data immediately)
   useEffect(() => {
-    const controller = new AbortController()
-    fetchAll(controller.signal)
+    // Immediately load mock data — zero network requests
+    // Real data will replace this automatically when WebSocket connects
+    initWithMockData()
+  }, [initWithMockData])
 
-    // Background refresh every 30 seconds
-    const timer = setInterval(() => {
-      const ac = new AbortController()
-      fetchAll(ac.signal)
-    }, 30_000)
-
-    return () => {
-      controller.abort()
-      clearInterval(timer)
-    }
-  }, [fetchAll])
-
-  // Try to connect to live WebSocket (silently falls back to mock)
+  // Start WebSocket — triggers fetchAll() only if backend is alive
   useLiveData(true)
 
   return null
