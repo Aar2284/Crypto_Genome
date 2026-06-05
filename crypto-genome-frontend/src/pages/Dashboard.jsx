@@ -108,12 +108,13 @@ export default function Dashboard() {
           </div>
         </div>
         
-        {/* Secondary Analytics Container (Crypto Globe) */}
-        <div className="col-span-1 rounded-xl bg-navy-800/80 backdrop-blur-sm border border-white/5 p-4 md:p-6 shadow-xl shadow-black/20 flex flex-col relative min-h-[300px]">
-           <div className="flex items-center justify-between mb-4 shrink-0 relative z-10">
+        {/* Global Market Globe — interactive, click coin nodes */}
+        <div className="col-span-1 rounded-xl bg-navy-800/80 backdrop-blur-sm border border-white/5 shadow-xl shadow-black/20 flex flex-col overflow-hidden relative min-h-[380px]">
+           <div className="px-4 pt-4 pb-1 shrink-0 relative z-10 flex items-center justify-between">
              <h2 className="text-base md:text-lg font-display text-white font-bold tracking-wide">GLOBAL MARKET</h2>
+             <span className="text-[9px] font-mono text-slate-600 border border-white/5 px-2 py-0.5 rounded">LIVE · {cryptoData.length} ASSETS</span>
            </div>
-           <div className="flex-1 w-full h-full min-h-[250px] relative">
+           <div className="flex-1 w-full relative">
              <Suspense fallback={<LoadingSpinner size={40} />}>
                <CryptoGlobe />
              </Suspense>
