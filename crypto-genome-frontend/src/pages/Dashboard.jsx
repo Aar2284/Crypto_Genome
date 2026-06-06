@@ -108,17 +108,17 @@ export default function Dashboard() {
           </div>
         </div>
         
-        {/* Global Market Globe — interactive, click coin nodes */}
-        <div className="col-span-1 rounded-xl bg-navy-800/80 backdrop-blur-sm border border-white/5 shadow-xl shadow-black/20 flex flex-col overflow-hidden relative min-h-[380px]">
-           <div className="px-4 pt-4 pb-1 shrink-0 relative z-10 flex items-center justify-between">
-             <h2 className="text-base md:text-lg font-display text-white font-bold tracking-wide">GLOBAL MARKET</h2>
-             <span className="text-[9px] font-mono text-slate-600 border border-white/5 px-2 py-0.5 rounded">LIVE · {cryptoData.length} ASSETS</span>
-           </div>
-           <div className="flex-1 w-full relative">
-             <Suspense fallback={<LoadingSpinner size={40} />}>
-               <CryptoGlobe />
-             </Suspense>
-           </div>
+        {/* Global Market Globe — context + interactivity fully self-contained */}
+        <div className="col-span-1 rounded-xl bg-navy-800/80 backdrop-blur-sm border border-white/5 shadow-xl shadow-black/20 flex flex-col overflow-hidden relative min-h-[480px]">
+          <div className="px-3 pt-3 pb-0 shrink-0 flex items-center justify-between">
+            <h2 className="text-base font-display text-white font-bold tracking-wide">GLOBAL MARKET</h2>
+            <span className="text-[9px] font-mono text-slate-600 border border-white/5 px-2 py-0.5 rounded">{cryptoData.length} ASSETS TRACKED</span>
+          </div>
+          <div className="flex-1 flex flex-col min-h-0">
+            <Suspense fallback={<LoadingSpinner size={40} />}>
+              <CryptoGlobe />
+            </Suspense>
+          </div>
         </div>
       </div>
 
