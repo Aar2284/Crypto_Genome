@@ -1,284 +1,407 @@
 import { useRef, useMemo, useState, useCallback } from "react"
 import { Canvas, useFrame } from "@react-three/fiber"
-import { OrbitControls, Sphere, MeshDistortMaterial, Stars, Html } from "@react-three/drei"
+import { OrbitControls, Stars, Html, Line } from "@react-three/drei"
 import { motion, AnimatePresence } from "framer-motion"
 import useCryptoStore from "../../store/useCryptoStore.js"
 
-// ── Helpers ────────────────────────────────────────────────────────────────────
+// ── Genome coordinate computation ─────────────────────────────────────────────
+// Positions each coin in 3D space based on its behavioral metrics.
+// These are NOT shown anywhere else on the dashboard.
 
-function symbolToPosition(index, total) {
-  const phi = Math.acos(1 - (2 * (index + 0.5)) / total)
-  const theta = Math.PI * (1 + Math.sqrt(5)) * index
-  const r = 1.52
+function computeGenome(coin, totalMarketCap) {
+  const change    = coin.change_24h_pct ?? 0
+  const vol24     = coin.volume_24h    ?? 0
+  const mcap      = coin.market_cap    ?? 1e9
+
+  // X: Volatility — how violently does this coin swing? (0 = calm, 1 = wild)
+  const volatility = Math.min(1, Math.abs(change) / 10)
+
+  // Y: Liquidity ratio — how actively traded vs its size? (volume/mcap)
+  const liquidityRatio = Math.min(1, (vol24 / mcap) * 6)
+
+  // Z: Momentum — is it trending up (+) or down (-)?
+  const momentum = Math.max(-1, Math.min(1, change / 8))
+
+  // Dominance — share of total market (used for node size)
+  const dominance = totalMarketCap > 0 ? mcap / totalMarketCap : 0
+
   return {
-    pos: [
-      r * Math.sin(phi) * Math.cos(theta),
-      r * Math.cos(phi),
-      r * Math.sin(phi) * Math.sin(theta),
-    ],
-    theta, // store theta so we can rotate globe to face it
+    x: (volatility - 0.5) * 6,        // -3 to +3
+    y: (liquidityRatio - 0.5) * 5,    // -2.5 to +2.5
+    z: momentum * 3,                   // -3 to +3
+    volatility,
+    liquidityRatio,
+    momentum: change,
+    dominance,
+    mcap,
   }
 }
 
+// Euclidean distance between two genome positions
+function genomeDistance(a, b) {
+  return Math.sqrt(
+    (a.x - b.x) ** 2 +
+    (a.y - b.y) ** 2 +
+    (a.z - b.z) ** 2
+  )
+}
+
 function changeToColor(change) {
-  if (change > 3) return "#00C896"
-  if (change > 0) return "#00D4FF"
+  if (change >  3) return "#00C896"
+  if (change >  0) return "#00D4FF"
   if (change > -3) return "#FFD700"
   return "#FF4466"
 }
 
-function mcapToScale(mcap) {
-  if (!mcap) return 0.038
-  return Math.max(0.03, Math.min(0.08, Math.log10(mcap) / 175))
-}
+// ── Single coin orb ────────────────────────────────────────────────────────────
 
-// ── Single coin node ─────────────────────────────────────────────────────────
-
-function CoinNode({ coin, index, total, isSelected, onSelect }) {
+function CoinOrb({ coin, genome, isSelected, isMajor, onSelect }) {
   const meshRef = useRef()
-  const ringRef = useRef()
-  const hitRef = useRef()
   const [hovered, setHovered] = useState(false)
-
-  const { pos } = useMemo(() => symbolToPosition(index, total), [index, total])
-  const color = useMemo(() => changeToColor(coin.change_24h_pct ?? 0), [coin.change_24h_pct])
-  const scale = useMemo(() => mcapToScale(coin.market_cap), [coin.market_cap])
-  const active = hovered || isSelected
-  const chgStr = `${(coin.change_24h_pct ?? 0) >= 0 ? "+" : ""}${(coin.change_24h_pct ?? 0).toFixed(1)}%`
+  const active = isSelected || hovered
+  const color  = changeToColor(coin.change_24h_pct ?? 0)
+  const radius = Math.max(0.06, Math.min(0.18, Math.log10(genome.mcap + 1) / 85))
 
   useFrame((state) => {
-    const t = state.clock.elapsedTime
     if (meshRef.current) {
-      const pulse = active ? 1 + Math.sin(t * 6) * 0.22 : 1 + Math.sin(t * 1.8 + index) * 0.07
+      const t = state.clock.elapsedTime
+      const pulse = active
+        ? 1 + Math.sin(t * 6) * 0.2
+        : 1 + Math.sin(t * 1.5 + genome.x) * 0.05
       meshRef.current.scale.setScalar(pulse)
-    }
-    if (ringRef.current) {
-      ringRef.current.rotation.z = t * (active ? 2.5 : 0.4)
-      ringRef.current.material.opacity = active ? 1 : 0.35
-      ringRef.current.scale.setScalar(active ? 1 + Math.sin(t * 4) * 0.1 : 1)
     }
   })
 
   return (
-    <group position={pos}>
-      {/* Glow ring */}
-      <mesh ref={ringRef}>
-        <torusGeometry args={[scale * 2.4, scale * 0.45, 6, 32]} />
-        <meshBasicMaterial color={color} transparent opacity={0.35} />
-      </mesh>
-
-      {/* Invisible large hit area — makes clicking easy */}
+    <group position={[genome.x, genome.y, genome.z]}>
+      {/* Invisible hit area — larger than visual */}
       <mesh
-        ref={hitRef}
         onPointerEnter={(e) => { e.stopPropagation(); setHovered(true) }}
         onPointerLeave={() => setHovered(false)}
-        onPointerDown={(e) => { e.stopPropagation(); onSelect(coin, index) }}
+        onPointerDown={(e) => { e.stopPropagation(); onSelect(coin, genome) }}
       >
-        <sphereGeometry args={[scale * 3, 8, 8]} />
+        <sphereGeometry args={[radius * 3, 6, 6]} />
         <meshBasicMaterial transparent opacity={0} />
       </mesh>
 
-      {/* Visible core */}
+      {/* Glow halo */}
+      {active && (
+        <mesh>
+          <sphereGeometry args={[radius * 2.2, 8, 8]} />
+          <meshBasicMaterial color={color} transparent opacity={0.12} />
+        </mesh>
+      )}
+
+      {/* Core orb */}
       <mesh ref={meshRef}>
-        <sphereGeometry args={[scale, 12, 12]} />
-        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={active ? 5 : 2} />
+        <sphereGeometry args={[radius, 12, 12]} />
+        <meshStandardMaterial
+          color={color}
+          emissive={color}
+          emissiveIntensity={active ? 5 : isSelected ? 4 : 2}
+        />
       </mesh>
 
-      {/* Label — symbol + change always visible */}
-      <Html center distanceFactor={6} style={{ pointerEvents: "none" }} position={[0, scale * 4.2, 0]}>
-        <div style={{ fontFamily: "JetBrains Mono, monospace", textAlign: "center", pointerEvents: "none", userSelect: "none", lineHeight: 1.3 }}>
+      {/* Label — always for major coins, only on hover for others */}
+      {(isMajor || active) && (
+        <Html center distanceFactor={8} style={{ pointerEvents: "none" }} position={[0, radius * 4.5, 0]}>
           <div style={{
-            fontSize: active ? "11px" : "9.5px",
+            fontFamily: "JetBrains Mono, monospace",
+            fontSize: active ? "10px" : "8px",
             fontWeight: "bold",
-            color: active ? "#fff" : "rgba(200,215,230,0.8)",
-            textShadow: `0 0 10px ${color}`,
-            background: active ? "rgba(0,8,22,0.92)" : "rgba(0,8,20,0.6)",
-            border: `1px solid ${color}${active ? "80" : "38"}`,
-            borderRadius: "4px",
-            padding: "1px 5px",
-            marginBottom: "2px",
+            color: active ? "#fff" : "rgba(200,215,230,0.65)",
+            textShadow: `0 0 8px ${color}`,
+            background: active ? "rgba(0,8,22,0.92)" : "transparent",
+            border: active ? `1px solid ${color}60` : "none",
+            borderRadius: "3px",
+            padding: active ? "1px 4px" : "0",
             whiteSpace: "nowrap",
+            transition: "all 0.12s",
+            pointerEvents: "none",
+            userSelect: "none",
           }}>
             {coin.symbol}
           </div>
-          <div style={{ fontSize: "8.5px", color, textShadow: `0 0 6px ${color}`, fontWeight: "700", whiteSpace: "nowrap" }}>
-            {chgStr}
-          </div>
-        </div>
-      </Html>
+        </Html>
+      )}
     </group>
   )
 }
 
-// ── Rotating group — auto-rotates to show selected coin ──────────────────────
+// ── Connection lines (similar genome profiles) ─────────────────────────────────
 
-function DataNodes({ coins, selectedIndex, onSelect, paused }) {
-  const groupRef = useRef()
-  const currentRot = useRef(0)
-
-  // Compute the theta of the selected coin (XZ angle on globe surface)
-  const targetTheta = useMemo(() => {
-    if (selectedIndex === null || selectedIndex === undefined) return null
-    const phi = Math.acos(1 - (2 * (selectedIndex + 0.5)) / coins.length)
-    const theta = Math.PI * (1 + Math.sqrt(5)) * selectedIndex
-    // To face camera (+z direction), we want globe rotY = -theta
-    // Add PI so coin shows on the near hemisphere
-    return -theta
-  }, [selectedIndex, coins.length])
-
-  useFrame(() => {
-    if (!groupRef.current) return
-    if (!paused) {
-      // Free auto-rotate
-      groupRef.current.rotation.y += 0.003
-      currentRot.current = groupRef.current.rotation.y
-    } else if (targetTheta !== null) {
-      // Smoothly rotate to selected coin
-      let current = groupRef.current.rotation.y
-      let target = targetTheta
-      // Find shortest angular path
-      let diff = ((target - current) % (Math.PI * 2))
-      if (diff > Math.PI) diff -= Math.PI * 2
-      if (diff < -Math.PI) diff += Math.PI * 2
-      groupRef.current.rotation.y += diff * 0.06
+function SimilarityLines({ coins, genomes, selectedSymbol }) {
+  const lines = useMemo(() => {
+    if (!selectedSymbol) {
+      // Show a sparse global constellation — closest pairs across all coins
+      const pairs = []
+      for (let i = 0; i < Math.min(coins.length, 40); i++) {
+        for (let j = i + 1; j < Math.min(coins.length, 40); j++) {
+          const d = genomeDistance(genomes[i], genomes[j])
+          if (d < 1.4) pairs.push({ i, j, d })
+        }
+      }
+      return pairs
+        .sort((a, b) => a.d - b.d)
+        .slice(0, 45)
+        .map(p => ({
+          points: [
+            [genomes[p.i].x, genomes[p.i].y, genomes[p.i].z],
+            [genomes[p.j].x, genomes[p.j].y, genomes[p.j].z],
+          ],
+          opacity: 0.06 + (1.4 - p.d) * 0.06,
+          color: "#00D4FF",
+        }))
     }
-  })
 
-  return (
-    <group ref={groupRef}>
-      {coins.map((coin, i) => (
-        <CoinNode
-          key={coin.symbol}
-          coin={coin}
-          index={i}
-          total={coins.length}
-          isSelected={selectedIndex === i}
-          onSelect={onSelect}
-        />
-      ))}
-    </group>
-  )
-}
+    // Selected: show its 8 nearest genome neighbors
+    const selIdx = coins.findIndex(c => c.symbol === selectedSymbol)
+    if (selIdx === -1) return []
+    const selGenome = genomes[selIdx]
+    return coins
+      .map((c, i) => ({ i, d: genomeDistance(selGenome, genomes[i]) }))
+      .filter(x => x.i !== selIdx && x.d < 4)
+      .sort((a, b) => a.d - b.d)
+      .slice(0, 8)
+      .map(x => ({
+        points: [
+          [selGenome.x, selGenome.y, selGenome.z],
+          [genomes[x.i].x, genomes[x.i].y, genomes[x.i].z],
+        ],
+        opacity: Math.max(0.1, 0.5 - x.d * 0.1),
+        color: changeToColor(coins[selIdx].change_24h_pct ?? 0),
+      }))
+  }, [coins, genomes, selectedSymbol])
 
-// ── Globe shell ───────────────────────────────────────────────────────────────
-
-function GlobeShell() {
-  const ringRef = useRef()
-  useFrame((s) => {
-    if (ringRef.current) ringRef.current.scale.setScalar(1 + Math.sin(s.clock.elapsedTime * 1.4) * 0.014)
-  })
   return (
     <>
-      <Stars radius={80} depth={50} count={3000} factor={4} fade speed={0.7} />
-      <Sphere args={[1.4, 48, 48]}>
-        <MeshDistortMaterial color="#00D4FF" wireframe distort={0.1} speed={1.2} opacity={0.22} transparent />
-      </Sphere>
-      <Sphere args={[1.33, 32, 32]}>
-        <meshStandardMaterial color="#000d1e" emissive="#001530" emissiveIntensity={0.55} />
-      </Sphere>
-      <mesh ref={ringRef} rotation={[Math.PI / 2.2, 0, 0]}>
-        <torusGeometry args={[1.85, 0.013, 8, 128]} />
-        <meshStandardMaterial color="#00C896" emissive="#00C896" emissiveIntensity={3.2} />
-      </mesh>
-      <ambientLight intensity={0.22} />
-      <pointLight position={[5, 5, 5]} color="#00D4FF" intensity={1.6} />
-      <pointLight position={[-5, -5, -5]} color="#7B2FBE" intensity={0.9} />
+      {lines.map((l, i) => (
+        <Line
+          key={i}
+          points={l.points}
+          color={l.color}
+          lineWidth={0.6}
+          transparent
+          opacity={l.opacity}
+        />
+      ))}
     </>
   )
 }
 
-// ── Coin detail card (fully opaque) ──────────────────────────────────────────
+// ── Axis labels in 3D space ────────────────────────────────────────────────────
 
-function CoinDetailCard({ coin, onClose }) {
-  if (!coin) return null
-  const change = coin.change_24h_pct ?? 0
-  const color = changeToColor(change)
-  const isUp = change >= 0
-  const fmt = (n, opts) => n != null ? new Intl.NumberFormat("en-US", opts).format(n) : "—"
-  const price = fmt(coin.current_price, { style: "currency", currency: "USD", minimumFractionDigits: coin.current_price < 1 ? 4 : 2 })
-  const mcap = coin.market_cap ? `$${fmt(coin.market_cap, { notation: "compact", maximumFractionDigits: 2 })}` : "—"
-  const vol = coin.volume_24h ? `$${fmt(coin.volume_24h, { notation: "compact", maximumFractionDigits: 2 })}` : "—"
-  const chgStr = `${isUp ? "+" : ""}${change.toFixed(2)}%`
-  const dominance = coin.market_cap ? Math.min(100, (coin.market_cap / 2_800_000_000_000) * 100) : 0
+function AxisLabels() {
+  const labels = [
+    { pos: [3.8, 0, 0],  text: "HIGH VOLATILITY →",  color: "#FFD700" },
+    { pos: [-3.8, 0, 0], text: "← LOW VOLATILITY",   color: "#64748b" },
+    { pos: [0, 3.0, 0],  text: "▲ HIGH LIQUIDITY",   color: "#00C896" },
+    { pos: [0, -3.0, 0], text: "▼ LOW LIQUIDITY",    color: "#64748b" },
+    { pos: [0, 0, 3.5],  text: "● RISING",            color: "#00C896" },
+    { pos: [0, 0, -3.5], text: "● FALLING",           color: "#FF4466" },
+  ]
+  return (
+    <>
+      {labels.map(({ pos, text, color }) => (
+        <Html key={text} center position={pos} style={{ pointerEvents: "none" }}>
+          <div style={{
+            fontFamily: "JetBrains Mono, monospace",
+            fontSize: "8px",
+            color,
+            opacity: 0.5,
+            whiteSpace: "nowrap",
+            userSelect: "none",
+          }}>
+            {text}
+          </div>
+        </Html>
+      ))}
+    </>
+  )
+}
+
+// ── SVG mini radar (for detail panel) ─────────────────────────────────────────
+
+function MiniRadar({ scores, labels, color }) {
+  const n  = scores.length
+  const cx = 55, cy = 55, r = 40
+  const rings = [0.33, 0.66, 1.0]
+
+  const pts = scores.map((v, i) => {
+    const angle = (i / n) * Math.PI * 2 - Math.PI / 2
+    return [cx + Math.cos(angle) * r * v, cy + Math.sin(angle) * r * v]
+  })
+  const pathD = pts.map((p, i) => `${i === 0 ? "M" : "L"}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(" ") + " Z"
+
+  return (
+    <svg width={110} height={110} viewBox="0 0 110 110">
+      {rings.map(g => (
+        <circle key={g} cx={cx} cy={cy} r={r * g} fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="1" />
+      ))}
+      {scores.map((_, i) => {
+        const angle = (i / n) * Math.PI * 2 - Math.PI / 2
+        return <line key={i} x1={cx} y1={cy} x2={cx + Math.cos(angle) * r} y2={cy + Math.sin(angle) * r} stroke="rgba(255,255,255,0.1)" strokeWidth="1" />
+      })}
+      <path d={pathD} fill={color + "30"} stroke={color} strokeWidth="1.5" />
+      {pts.map((p, i) => <circle key={i} cx={p[0]} cy={p[1]} r={2.5} fill={color} />)}
+      {labels.map((label, i) => {
+        const angle = (i / n) * Math.PI * 2 - Math.PI / 2
+        const lx = cx + Math.cos(angle) * (r + 13)
+        const ly = cy + Math.sin(angle) * (r + 13)
+        return (
+          <text key={label} x={lx} y={ly} textAnchor="middle" dominantBaseline="middle"
+            fontSize="7" fill="rgba(148,163,184,0.75)" fontFamily="JetBrains Mono">
+            {label}
+          </text>
+        )
+      })}
+    </svg>
+  )
+}
+
+// ── Detail panel ───────────────────────────────────────────────────────────────
+
+function GenomeDetailPanel({ coin, genome, similarCoins, onClose }) {
+  if (!coin || !genome) return null
+
+  const change  = coin.change_24h_pct ?? 0
+  const color   = changeToColor(change)
+  const isUp    = change >= 0
+  const fmt     = (n, opts) => n != null ? new Intl.NumberFormat("en-US", opts).format(n) : "—"
+  const price   = fmt(coin.current_price, { style: "currency", currency: "USD", minimumFractionDigits: coin.current_price < 1 ? 4 : 2 })
+
+  // Radar scores: volatility, liquidity, momentum (0-1), dominance (scaled), activity
+  const radarScores  = [
+    genome.volatility,
+    genome.liquidityRatio,
+    Math.max(0, (genome.momentum + 10) / 20), // normalize to 0-1
+    Math.min(1, genome.dominance * 30),
+    Math.min(1, (coin.volume_24h ?? 0) / 5e10),
+  ]
+  const radarLabels = ["VOL", "LIQ", "MOM", "DOM", "ACT"]
+
+  const bars = [
+    { label: "Volatility",    value: genome.volatility,    desc: "How wildly price swings" },
+    { label: "Liquidity",     value: genome.liquidityRatio, desc: "Volume relative to market size" },
+    { label: "Momentum",      value: Math.max(0, (genome.momentum + 10) / 20), desc: isUp ? "Currently rising" : "Currently falling" },
+    { label: "Mkt Dominance", value: Math.min(1, genome.dominance * 25), desc: "Share of global crypto market" },
+  ]
 
   return (
     <motion.div
-      initial={{ opacity: 0, x: -10 }}
+      initial={{ opacity: 0, x: 12 }}
       animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -8 }}
-      transition={{ duration: 0.2 }}
-      className="absolute bottom-3 left-3 z-30 w-56"
-      style={{
-        // Fully opaque — no mix with globe
-        background: "#030c1a",
-        border: `1.5px solid ${color}55`,
-        borderRadius: "14px",
-        boxShadow: `0 8px 32px rgba(0,0,0,0.9), 0 0 20px ${color}22`,
-      }}
+      exit={{ opacity: 0, x: 10 }}
+      transition={{ duration: 0.18 }}
+      className="absolute top-2 right-2 z-30 w-60"
+      style={{ background: "#020b18", border: `1.5px solid ${color}45`, borderRadius: "14px", boxShadow: `0 12px 40px rgba(0,0,0,0.95), 0 0 24px ${color}18` }}
     >
       <div className="p-4">
         {/* Header */}
-        <div className="flex items-start justify-between mb-3">
+        <div className="flex justify-between items-start mb-3">
           <div>
-            <div className="font-display font-bold text-white text-base leading-tight">{coin.name}</div>
-            <div className="font-mono text-[10px] mt-0.5 flex items-center gap-1.5" style={{ color }}>
-              <span className="w-1.5 h-1.5 rounded-full animate-pulse inline-block" style={{ background: color }} />
-              {coin.symbol} · Cryptocurrency
+            <div className="font-display font-bold text-white text-base">{coin.name}</div>
+            <div className="font-mono text-[10px] flex items-center gap-1.5 mt-0.5" style={{ color }}>
+              <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: color, display: "inline-block" }} />
+              {coin.symbol}
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="w-6 h-6 rounded-full bg-white/8 hover:bg-white/15 flex items-center justify-center text-slate-500 hover:text-white transition-colors text-xs"
-          >
-            ✕
-          </button>
+          <button onClick={onClose} className="w-6 h-6 rounded-full bg-white/8 hover:bg-white/15 flex items-center justify-center text-slate-500 hover:text-white text-xs transition-colors">✕</button>
         </div>
 
         {/* Price */}
-        <div className="font-display font-bold text-white text-2xl mb-1 tabular-nums">{price}</div>
-        <div
-          className="inline-flex items-center gap-1.5 text-xs font-mono px-2.5 py-1 rounded-full mb-4"
-          style={{ background: `${color}20`, border: `1px solid ${color}40`, color }}
-        >
-          {isUp ? "▲" : "▼"} {chgStr} in last 24 hours
+        <div className="font-display font-bold text-white text-xl tabular-nums">{price}</div>
+        <div className="inline-flex items-center gap-1 text-xs font-mono px-2 py-0.5 rounded-full mt-1 mb-4" style={{ background: `${color}18`, border: `1px solid ${color}38`, color }}>
+          {isUp ? "▲" : "▼"} {Math.abs(change).toFixed(2)}% 24h
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 gap-2 mb-3">
-          {[
-            { label: "Market Cap", value: mcap, sub: "Total coins × price" },
-            { label: "24h Volume", value: vol, sub: "USD traded today" },
-          ].map(({ label, value, sub }) => (
-            <div key={label} className="rounded-lg p-2.5" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
-              <div className="text-[9px] font-mono text-slate-500 uppercase tracking-wide">{label}</div>
-              <div className="text-[12px] font-mono text-white mt-1 font-bold">{value}</div>
-              <div className="text-[8px] font-mono text-slate-600 mt-0.5">{sub}</div>
+        {/* Genome Radar */}
+        <div className="flex items-center gap-3 mb-3">
+          <MiniRadar scores={radarScores} labels={radarLabels} color={color} />
+          <div className="flex-1">
+            <div className="text-[9px] font-mono text-slate-500 uppercase tracking-widest mb-2">Genome Scores</div>
+            {bars.map(({ label, value, desc }) => (
+              <div key={label} className="mb-1.5">
+                <div className="flex justify-between text-[8px] font-mono mb-0.5">
+                  <span className="text-slate-400">{label}</span>
+                  <span style={{ color }}>{(value * 100).toFixed(0)}%</span>
+                </div>
+                <div className="w-full h-1 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.07)" }}>
+                  <motion.div className="h-full rounded-full" style={{ background: color }}
+                    initial={{ width: 0 }} animate={{ width: `${value * 100}%` }} transition={{ duration: 0.4 }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Genome position */}
+        <div className="rounded-lg p-2 mb-3" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+          <div className="text-[8px] font-mono text-slate-600 uppercase tracking-widest mb-1.5">3D Genome Coords</div>
+          <div className="grid grid-cols-3 gap-1 text-center">
+            {[["X", "Volatility", genome.x], ["Y", "Liquidity", genome.y], ["Z", "Momentum", genome.z]].map(([ax, label, val]) => (
+              <div key={ax}>
+                <div className="text-[9px] font-mono font-bold text-slate-300">{Number(val).toFixed(2)}</div>
+                <div className="text-[7px] font-mono text-slate-600">{label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Similar coins (genome neighbors) */}
+        {similarCoins?.length > 0 && (
+          <div>
+            <div className="text-[8px] font-mono text-slate-600 uppercase tracking-widest mb-1.5">Genomically Similar</div>
+            <div className="flex flex-wrap gap-1">
+              {similarCoins.map(s => (
+                <span key={s.symbol} className="px-1.5 py-0.5 rounded text-[8px] font-mono font-bold"
+                  style={{ background: `${changeToColor(s.change_24h_pct ?? 0)}15`, color: changeToColor(s.change_24h_pct ?? 0), border: `1px solid ${changeToColor(s.change_24h_pct ?? 0)}30` }}>
+                  {s.symbol}
+                </span>
+              ))}
             </div>
-          ))}
-        </div>
-
-        {/* Market dominance bar */}
-        <div>
-          <div className="flex justify-between items-center mb-1.5">
-            <span className="text-[9px] font-mono text-slate-500">Share of total crypto market</span>
-            <span className="text-[10px] font-mono font-bold" style={{ color }}>{dominance.toFixed(1)}%</span>
           </div>
-          <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.08)" }}>
-            <motion.div
-              className="h-full rounded-full"
-              style={{ background: `linear-gradient(90deg, ${color}88, ${color})` }}
-              initial={{ width: 0 }}
-              animate={{ width: `${dominance}%` }}
-              transition={{ duration: 0.5, ease: "easeOut" }}
-            />
-          </div>
-        </div>
+        )}
 
-        <div className="mt-3 text-[8px] font-mono text-slate-700 text-center">
-          Click anywhere on the globe to close
+        <div className="mt-3 text-[7px] font-mono text-slate-700 text-center border-t border-white/5 pt-2">
+          Lines show coins with similar genome profiles
         </div>
       </div>
     </motion.div>
+  )
+}
+
+// ── Scene ─────────────────────────────────────────────────────────────────────
+
+function GenomeScene({ coins, genomes, selectedSymbol, onSelect }) {
+  // Top 20 by market cap always show labels
+  const majorSymbols = useMemo(() =>
+    new Set([...coins].sort((a, b) => (b.market_cap ?? 0) - (a.market_cap ?? 0)).slice(0, 18).map(c => c.symbol)),
+    [coins]
+  )
+
+  return (
+    <>
+      <Stars radius={100} depth={60} count={2500} factor={3.5} fade speed={0.5} />
+      <ambientLight intensity={0.15} />
+      <pointLight position={[8, 8, 8]}  color="#00D4FF" intensity={1.2} />
+      <pointLight position={[-8,-8,-8]} color="#7B2FBE" intensity={0.7} />
+      <pointLight position={[0, 8, 0]}  color="#00C896" intensity={0.4} />
+
+      <SimilarityLines coins={coins} genomes={genomes} selectedSymbol={selectedSymbol} />
+      <AxisLabels />
+
+      {coins.map((coin, i) => (
+        <CoinOrb
+          key={coin.symbol}
+          coin={coin}
+          genome={genomes[i]}
+          isSelected={selectedSymbol === coin.symbol}
+          isMajor={majorSymbols.has(coin.symbol)}
+          onSelect={onSelect}
+        />
+      ))}
+    </>
   )
 }
 
@@ -286,142 +409,100 @@ function CoinDetailCard({ coin, onClose }) {
 
 export default function CryptoGlobe() {
   const cryptoData = useCryptoStore((s) => s.cryptoData)
-  const coins = useMemo(() => cryptoData ?? [], [cryptoData])
+  const coins      = useMemo(() => cryptoData ?? [], [cryptoData])
 
-  const [selectedIdx, setSelectedIdx] = useState(null)
-  const [paused, setPaused] = useState(false)
-  const selectedCoin = selectedIdx !== null ? coins[selectedIdx] : null
+  // Compute genome coords once (memoized)
+  const totalMarketCap = useMemo(() => coins.reduce((s, c) => s + (c.market_cap ?? 0), 0), [coins])
+  const genomes        = useMemo(() => coins.map(c => computeGenome(c, totalMarketCap)), [coins, totalMarketCap])
 
-  const handleSelect = useCallback((coin, index) => {
-    if (selectedIdx === index) {
-      setSelectedIdx(null)
-      setPaused(false)
-    } else {
-      setSelectedIdx(index)
-      setPaused(true)
-    }
-  }, [selectedIdx])
+  const [selected, setSelected] = useState(null)  // { coin, genome }
 
-  const handleDeselect = useCallback(() => {
-    setSelectedIdx(null)
-    setPaused(false)
+  const handleSelect = useCallback((coin, genome) => {
+    setSelected(prev => prev?.coin.symbol === coin.symbol ? null : { coin, genome })
   }, [])
+  const handleDeselect = useCallback(() => setSelected(null), [])
 
-  const sorted = useMemo(() => [...coins].sort((a, b) => (b.change_24h_pct ?? 0) - (a.change_24h_pct ?? 0)), [coins])
-  const topGainers = sorted.slice(0, 3)
-  const topLosers = sorted.slice(-3).reverse()
+  // Compute similar coins for selected
+  const similarCoins = useMemo(() => {
+    if (!selected) return []
+    const selIdx = coins.findIndex(c => c.symbol === selected.coin.symbol)
+    if (selIdx === -1) return []
+    return coins
+      .map((c, i) => ({ c, d: genomeDistance(selected.genome, genomes[i]) }))
+      .filter(x => x.c.symbol !== selected.coin.symbol && x.d < 2.5)
+      .sort((a, b) => a.d - b.d)
+      .slice(0, 6)
+      .map(x => x.c)
+  }, [selected, coins, genomes])
 
   return (
-    <div className="w-full h-full flex flex-col relative select-none overflow-hidden">
+    <div className="w-full h-full relative select-none">
 
-      {/* ── Plain-English description ── */}
-      <div className="px-3 pt-2 pb-1 shrink-0">
-        <p className="text-[10px] font-mono text-slate-500 leading-relaxed">
-          Each <span className="text-cyan-400 font-semibold">glowing dot</span> = one tracked cryptocurrency.
-          Color shows its 24h price movement — see the legend.
-          <span className="text-slate-400"> Bigger dot = larger market size.</span>
+      {/* Description strip */}
+      <div className="absolute top-0 left-0 right-0 z-10 px-4 pt-2 pointer-events-none">
+        <p className="text-[9.5px] font-mono text-slate-500 leading-relaxed">
+          <span className="text-cyan-400 font-semibold">GENOME SPACE</span> — each coin's 3D position is its behavioral signature.
+          <span className="text-amber-300"> X = volatility</span> ·
+          <span className="text-emerald-400"> Y = liquidity</span> ·
+          <span className="text-purple-400"> Z = momentum</span>.
+          Lines connect coins with similar profiles. <span className="text-slate-400">Rotate · Click to analyze.</span>
         </p>
       </div>
 
-      {/* ── Gainers / Losers (clickable) ── */}
-      <div className="flex gap-2 px-3 pb-1.5 shrink-0">
-        <div className="flex-1 rounded-lg px-2 py-1.5" style={{ background: "rgba(0,200,150,0.05)", border: "1px solid rgba(0,200,150,0.15)" }}>
-          <div className="text-[8px] font-mono text-emerald-400/60 uppercase tracking-widest mb-1 font-semibold">▲ Top Gainers (24h)</div>
-          {topGainers.map((c) => {
-            const idx = coins.findIndex(x => x.symbol === c.symbol)
-            return (
-              <button key={c.symbol} onClick={() => handleSelect(c, idx)}
-                className="w-full flex items-center justify-between hover:bg-white/5 rounded px-1 py-0.5 transition-colors">
-                <span className="font-mono text-[9px] text-slate-200 font-bold">{c.symbol}</span>
-                <span className="font-mono text-[9px] text-emerald-400 font-semibold">+{(c.change_24h_pct ?? 0).toFixed(1)}%</span>
-              </button>
-            )
-          })}
-        </div>
-        <div className="flex-1 rounded-lg px-2 py-1.5" style={{ background: "rgba(255,68,102,0.05)", border: "1px solid rgba(255,68,102,0.15)" }}>
-          <div className="text-[8px] font-mono text-rose-400/60 uppercase tracking-widest mb-1 font-semibold">▼ Top Losers (24h)</div>
-          {topLosers.map((c) => {
-            const idx = coins.findIndex(x => x.symbol === c.symbol)
-            return (
-              <button key={c.symbol} onClick={() => handleSelect(c, idx)}
-                className="w-full flex items-center justify-between hover:bg-white/5 rounded px-1 py-0.5 transition-colors">
-                <span className="font-mono text-[9px] text-slate-200 font-bold">{c.symbol}</span>
-                <span className="font-mono text-[9px] text-rose-400 font-semibold">{(c.change_24h_pct ?? 0).toFixed(1)}%</span>
-              </button>
-            )
-          })}
-        </div>
-      </div>
+      {/* 3D canvas */}
+      <Canvas
+        camera={{ position: [4, 3, 8], fov: 52 }}
+        dpr={[1, 1.5]}
+        gl={{ antialias: true }}
+        onPointerMissed={handleDeselect}
+        className="w-full h-full"
+      >
+        <GenomeScene
+          coins={coins}
+          genomes={genomes}
+          selectedSymbol={selected?.coin.symbol}
+          onSelect={handleSelect}
+        />
+        <OrbitControls
+          enablePan={true}
+          enableZoom={true}
+          autoRotate={!selected}
+          autoRotateSpeed={0.3}
+          minDistance={4}
+          maxDistance={18}
+          dampingFactor={0.08}
+          enableDamping
+        />
+      </Canvas>
 
-      {/* ── 3D Globe ── */}
-      <div className="flex-1 relative min-h-0">
-        <Canvas
-          camera={{ position: [0, 0, 4.2], fov: 48 }}
-          dpr={[1, 1.5]}
-          gl={{ antialias: true }}
-          onPointerMissed={handleDeselect}
-        >
-          <GlobeShell />
-          {coins.length > 0 && (
-            <DataNodes
-              coins={coins}
-              selectedIndex={selectedIdx}
-              onSelect={handleSelect}
-              paused={paused}
-            />
-          )}
-          <OrbitControls
-            enablePan={false}
-            enableZoom={false}
-            autoRotate={false}   // we handle rotation manually in DataNodes
-            minPolarAngle={Math.PI / 4}
-            maxPolarAngle={Math.PI / 1.4}
+      {/* Genome detail panel */}
+      <AnimatePresence>
+        {selected && (
+          <GenomeDetailPanel
+            coin={selected.coin}
+            genome={selected.genome}
+            similarCoins={similarCoins}
+            onClose={handleDeselect}
           />
-        </Canvas>
+        )}
+      </AnimatePresence>
 
-        {/* Coin detail card — fully opaque, left-aligned */}
-        <AnimatePresence>
-          {selectedCoin && (
-            <CoinDetailCard coin={selectedCoin} onClose={handleDeselect} />
-          )}
-        </AnimatePresence>
-
-        {/* Color legend — bottom right, readable size */}
-        <div className="absolute bottom-2 right-2 z-20 rounded-xl p-3 border" style={{ background: "#030c1a", borderColor: "rgba(255,255,255,0.08)" }}>
-          <div className="text-[9px] font-mono text-slate-500 uppercase tracking-widest mb-2 font-semibold">Color = 24h Change</div>
-          {[
-            { color: "#00C896", label: "Strong gain", sub: "> +3%" },
-            { color: "#00D4FF", label: "Mild gain", sub: "0% to +3%" },
-            { color: "#FFD700", label: "Mild loss", sub: "0% to −3%" },
-            { color: "#FF4466", label: "Strong loss", sub: "below −3%" },
-          ].map(({ color, label, sub }) => (
-            <div key={label} className="flex items-center gap-2 mb-1.5 last:mb-0">
-              <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: color, boxShadow: `0 0 5px ${color}` }} />
-              <div>
-                <div className="font-mono text-[10px] text-slate-200 leading-none">{label}</div>
-                <div className="font-mono text-[8px] text-slate-600 leading-none mt-0.5">{sub}</div>
-              </div>
+      {/* Interaction hint */}
+      <AnimatePresence>
+        {!selected && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 pointer-events-none"
+          >
+            <div className="rounded-full px-3 py-1 border text-[9px] font-mono text-slate-500 whitespace-nowrap"
+              style={{ background: "rgba(2,11,24,0.8)", borderColor: "rgba(255,255,255,0.07)" }}>
+              🖱 Drag to rotate · Scroll to zoom · Click any orb to analyze
             </div>
-          ))}
-        </div>
-
-        {/* Interaction hint */}
-        <AnimatePresence>
-          {!selectedCoin && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute bottom-2 left-1/2 -translate-x-1/2 z-10 rounded-full px-3 py-1 border pointer-events-none"
-              style={{ background: "rgba(3,12,26,0.8)", borderColor: "rgba(255,255,255,0.07)" }}
-            >
-              <span className="text-[9px] font-mono text-slate-500 whitespace-nowrap">
-                🖱 Drag to rotate · Click a dot or use the lists above for details
-              </span>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
