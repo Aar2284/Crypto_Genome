@@ -6,7 +6,7 @@ import PriceLineChart from "../components/charts/PriceLineChart.jsx"
 import CryptoTable from "../components/ui/CryptoTable.jsx"
 import LoadingSpinner from "../components/ui/LoadingSpinner.jsx"
 import useCryptoStore from "../store/useCryptoStore.js"
-import CryptoGlobe from "../components/3d/CryptoGlobe.jsx"
+import GenomeSpace from "../components/3d/GenomeSpace.jsx"
 
 export default function Dashboard() {
   const { cryptoData, metrics, btcHistory, loading, wsStatus, wsLatency } = useCryptoStore()
@@ -88,17 +88,20 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* ── Row 3: Global Market Globe — full width, tall ── */}
-      <div className="rounded-xl bg-navy-800/80 backdrop-blur-sm border border-white/5 shadow-xl shadow-black/20 overflow-hidden" style={{ height: "540px" }}>
-        <div className="px-4 pt-3 pb-0 flex items-center justify-between shrink-0">
-          <h2 className="text-base font-display text-white font-bold tracking-wide">GLOBAL MARKET</h2>
+      {/* ── Row 3: Genome Space — 3D behavioral scatter plot ── */}
+      <div className="rounded-xl bg-navy-800/80 backdrop-blur-sm border border-white/5 shadow-xl shadow-black/20 overflow-hidden" style={{ height: "580px" }}>
+        <div className="px-4 pt-3 pb-0 flex items-center justify-between">
+          <div>
+            <h2 className="text-base font-display text-white font-bold tracking-wide">GENOME SPACE</h2>
+            <p className="text-[9px] font-mono text-slate-600 mt-0.5">3D behavioral fingerprint — volatility · liquidity · momentum</p>
+          </div>
           <span className="text-[9px] font-mono text-slate-600 border border-white/5 px-2 py-0.5 rounded">
-            {cryptoData.length} ASSETS TRACKED
+            {cryptoData.length} ASSETS MAPPED
           </span>
         </div>
         <div className="h-full">
           <Suspense fallback={<div className="h-full flex items-center justify-center"><LoadingSpinner size={40} /></div>}>
-            <CryptoGlobe />
+            <GenomeSpace />
           </Suspense>
         </div>
       </div>
