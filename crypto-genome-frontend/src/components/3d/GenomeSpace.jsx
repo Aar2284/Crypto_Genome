@@ -7,21 +7,29 @@ import useCryptoStore from "../../store/useCryptoStore.js"
 
 // ── Config ────────────────────────────────────────────────────────────────────
 const ORBIT_CONFIG = [
-  { radius: 3.2,  tiltDeg: 6,  speed: 0.55, ringColor: "#FFD700", tier: "Tier 1 · Mega Cap"  },
-  { radius: 5.5,  tiltDeg: 20, speed: 0.35, ringColor: "#00CFFF", tier: "Tier 2 · Large Cap" },
-  { radius: 8.2,  tiltDeg: 30, speed: 0.21, ringColor: "#00FF88", tier: "Tier 3 · Mid Cap"   },
+  { radius: 3.2, tiltDeg: 6, speed: 0.55, ringColor: "#FFD700", tier: "Tier 1 · Mega Cap" },
+  { radius: 5.5, tiltDeg: 20, speed: 0.35, ringColor: "#00CFFF", tier: "Tier 2 · Large Cap" },
+  { radius: 8.2, tiltDeg: 30, speed: 0.21, ringColor: "#00FF88", tier: "Tier 3 · Mid Cap" },
   { radius: 11.4, tiltDeg: 12, speed: 0.12, ringColor: "#A855F7", tier: "Tier 4 · Small Cap" },
 ]
 const COINS_PER_RING = [2, 6, 14, 18]
 
 function getColor(change) {
-  if (change >  5) return "#00FF88"
-  if (change >  0) return "#00CFFF"
+  if (change > 5) return "#00FF88"
+  if (change > 0) return "#00CFFF"
   if (change > -5) return "#FF8C00"
   return "#FF3366"
 }
 function getCoinRadius(mcap) {
-  return Math.max(0.13, Math.min(0.48, Math.log10((mcap ?? 1e9) + 1) / 24.5))
+  return Math.max(0.25, Math.min(0.75, Math.log10((mcap ?? 1e9) + 1) / 16))
+}
+
+function formatPrice(price) {
+  if (price == null) return "—"
+  if (price < 0.01) {
+    return "$" + price.toLocaleString(undefined, { maximumSignificantDigits: 4 })
+  }
+  return "$" + price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
 // ── Instanced dust particles along each orbit ──────────────────────────────────
@@ -49,7 +57,7 @@ function OrbitalDust({ radius, tiltDeg, color }) {
     <group rotation={[(tiltDeg * Math.PI) / 180, 0, 0]}>
       <instancedMesh ref={ref} args={[null, null, COUNT]}>
         <sphereGeometry args={[0.012, 4, 4]} />
-        <meshBasicMaterial color={color} transparent opacity={0.28} />
+        <meshBasicMaterial color={color} transparent opacity={0.45} />
       </instancedMesh>
     </group>
   )
@@ -57,11 +65,11 @@ function OrbitalDust({ radius, tiltDeg, color }) {
 
 // ── Pulsing gyroscope core ────────────────────────────────────────────────────
 function MarketCore() {
-  const innerRef  = useRef()
-  const ring1Ref  = useRef()
-  const ring2Ref  = useRef()
-  const ring3Ref  = useRef()
-  const halos     = [useRef(), useRef()]
+  const innerRef = useRef()
+  const ring1Ref = useRef()
+  const ring2Ref = useRef()
+  const ring3Ref = useRef()
+  const halos = [useRef(), useRef()]
 
   useFrame(({ clock }) => {
     const t = clock.elapsedTime
@@ -133,9 +141,9 @@ function CometTrail({ angle, radius, color }) {
 
   return (
     <>
-      <Line points={pts}           color={color} lineWidth={0.6} transparent opacity={0.07} />
-      <Line points={pts.slice(0, 14)} color={color} lineWidth={1.2} transparent opacity={0.18} />
-      <Line points={pts.slice(0, 7)}  color={color} lineWidth={2.2} transparent opacity={0.48} />
+      <Line points={pts} color={color} lineWidth={0.8} transparent opacity={0.12} />
+      <Line points={pts.slice(0, 14)} color={color} lineWidth={1.5} transparent opacity={0.25} />
+      <Line points={pts.slice(0, 7)} color={color} lineWidth={2.5} transparent opacity={0.65} />
     </>
   )
 }
@@ -164,13 +172,13 @@ function SparkleRing({ r, color }) {
 }
 
 // ── Single coin on orbit ───────────────────────────────────────────────────────
-function OrbitalCoin({ coin, isSelected, isDimmed, onSelect, onHover }) {
+function OrbitalCoin({ coin, ringColor, isSelected, isDimmed, onSelect, onHover }) {
   const coreRef = useRef()
   const haloRef = useRef()
   const [hov, setHov] = useState(false)
   const active = isSelected || hov
-  const color  = getColor(coin.change_24h_pct ?? 0)
-  const r      = getCoinRadius(coin.market_cap)
+  const color = getColor(coin.change_24h_pct ?? 0)
+  const r = getCoinRadius(coin.market_cap)
   const change = coin.change_24h_pct ?? 0
 
   useFrame(({ clock }) => {
@@ -182,8 +190,8 @@ function OrbitalCoin({ coin, isSelected, isDimmed, onSelect, onHover }) {
           ? 1.2 + Math.sin(t * 4) * 0.08
           : 1 + Math.sin(t * 1.3) * 0.04
       coreRef.current.scale.setScalar(scale)
-      coreRef.current.material.emissiveIntensity = isSelected ? 6 : hov ? 4 : isDimmed ? 0.6 : 2.2
-      coreRef.current.material.opacity = isDimmed ? 0.38 : 1
+      coreRef.current.material.emissiveIntensity = isSelected ? 4 : hov ? 2.8 : isDimmed ? 0.4 : 1.4
+      coreRef.current.material.opacity = isDimmed ? 0.35 : 1
     }
     if (haloRef.current) {
       haloRef.current.material.opacity = active
@@ -196,7 +204,7 @@ function OrbitalCoin({ coin, isSelected, isDimmed, onSelect, onHover }) {
     <group>
       {/* Hit area */}
       <mesh
-        onPointerEnter={(e) => { e.stopPropagation(); setHov(true);  onHover(coin.symbol) }}
+        onPointerEnter={(e) => { e.stopPropagation(); setHov(true); onHover(coin.symbol) }}
         onPointerLeave={() => { setHov(false); onHover(null) }}
         onPointerDown={(e) => { e.stopPropagation(); onSelect(coin) }}
       >
@@ -213,42 +221,50 @@ function OrbitalCoin({ coin, isSelected, isDimmed, onSelect, onHover }) {
       {/* Core */}
       <mesh ref={coreRef}>
         <sphereGeometry args={[r, 18, 18]} />
-        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={2.2} transparent roughness={0.12} />
+        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={1.4} transparent roughness={0.2} />
       </mesh>
 
       {/* Selection fx */}
       {isSelected && <SparkleRing r={r} color={color} />}
       {isSelected && (
-        <mesh position={[0, 5, 0]}>
-          <cylinderGeometry args={[0.015, r * 0.8, 10, 6, 1, true]} />
-          <meshBasicMaterial color={color} transparent opacity={0.22} side={THREE.DoubleSide} />
-        </mesh>
+        <group>
+          <mesh>
+            <torusGeometry args={[r * 1.5, 0.03, 4, 32]} />
+            <meshBasicMaterial color={color} transparent opacity={0.6} />
+          </mesh>
+          <mesh rotation={[Math.PI / 2, 0, 0]}>
+            <torusGeometry args={[r * 1.5, 0.03, 4, 32]} />
+            <meshBasicMaterial color={color} transparent opacity={0.6} />
+          </mesh>
+        </group>
       )}
 
       {/* Label */}
       {!isDimmed && (
-        <Html center distanceFactor={14} position={[0, r + 0.38, 0]} style={{ pointerEvents: "none" }}>
+        <Html center distanceFactor={14} position={[0, r + 0.6, 0]} style={{ pointerEvents: "none" }}>
           <div style={{
             fontFamily: "JetBrains Mono, monospace",
             textAlign: "center",
             userSelect: "none",
           }}>
             <div style={{
-              fontSize: isSelected ? "11px" : hov ? "10px" : "8px",
+              fontSize: isSelected ? "15px" : hov ? "13px" : "11px",
               fontWeight: 700,
-              color: active ? "#fff" : "rgba(195,215,235,0.72)",
-              textShadow: `0 0 14px ${color}`,
-              background: active ? "rgba(0,4,16,0.96)" : "rgba(0,4,14,0.55)",
-              border: `1px solid ${color}${active ? "95" : "38"}`,
-              borderRadius: "4px",
-              padding: active ? "2px 7px" : "1px 4px",
+              color: active ? "#fff" : "rgba(195,215,235,0.85)",
+              textShadow: `0 0 7px ${color}88`,
+              background: active ? "rgba(0,4,16,0.97)" : "rgba(0,4,14,0.7)",
+              border: `1px solid ${color}${active ? "80" : "45"}`,
+              borderRadius: "5px",
+              padding: active ? "3px 9px" : "2px 6px",
               whiteSpace: "nowrap",
               transition: "all 0.12s ease",
+              letterSpacing: "0.04em",
             }}>
+              <span style={{ color: ringColor, marginRight: "5px", fontSize: "0.75em", opacity: 0.85 }}>●</span>
               {coin.symbol}
             </div>
             {active && (
-              <div style={{ fontSize: "8px", color, fontWeight: 700, marginTop: "2px", textShadow: `0 0 8px ${color}` }}>
+              <div style={{ fontSize: "10px", color, fontWeight: 700, marginTop: "3px", textShadow: `0 0 5px ${color}88` }}>
                 {change >= 0 ? "▲" : "▼"} {Math.abs(change).toFixed(1)}%
               </div>
             )}
@@ -274,7 +290,7 @@ function OrbitalRing({ coins, cfgIdx, selectedSymbol, hoveredSymbol, onSelect, o
       {/* Orbit path */}
       <mesh rotation={[Math.PI / 2, 0, 0]}>
         <torusGeometry args={[radius, 0.015, 4, 200]} />
-        <meshBasicMaterial color={ringColor} transparent opacity={0.18} />
+        <meshBasicMaterial color={ringColor} transparent opacity={0.4} />
       </mesh>
 
       {/* Orbital dust */}
@@ -302,6 +318,7 @@ function OrbitalRing({ coins, cfgIdx, selectedSymbol, hoveredSymbol, onSelect, o
               <group position={[x, 0, z]}>
                 <OrbitalCoin
                   coin={coin}
+                  ringColor={ringColor}
                   isSelected={selectedSymbol === coin.symbol}
                   isDimmed={isDimmed}
                   onSelect={onSelect}
@@ -333,9 +350,7 @@ function PriceTicker({ coins }) {
       <div style={{ display: "flex", gap: "28px", animation: "tickerScroll 55s linear infinite", whiteSpace: "nowrap", willChange: "transform" }}>
         {items.map(c => {
           const color = getColor(c.change_24h_pct ?? 0)
-          const price = c.current_price < 1
-            ? `$${c.current_price.toFixed(4)}`
-            : `$${c.current_price.toLocaleString(undefined, { maximumFractionDigits: 2 })}`
+          const price = formatPrice(c.current_price)
           return (
             <span key={c.key} style={{ fontFamily: "JetBrains Mono", fontSize: "10px", display: "inline-flex", alignItems: "center", gap: "5px", flexShrink: 0 }}>
               <span style={{ color, fontWeight: 700 }}>{c.symbol}</span>
@@ -352,14 +367,14 @@ function PriceTicker({ coins }) {
 // ── Detail panel ───────────────────────────────────────────────────────────────
 function GenomePanel({ coin, cfgIdx, onClose }) {
   if (!coin) return null
-  const change  = coin.change_24h_pct ?? 0
-  const color   = getColor(change)
-  const isUp    = change >= 0
-  const cfg     = ORBIT_CONFIG[cfgIdx]
-  const fmt     = (n, o) => n != null ? new Intl.NumberFormat("en-US", o).format(n) : "—"
-  const price   = fmt(coin.current_price, { style: "currency", currency: "USD", minimumFractionDigits: coin.current_price < 1 ? 4 : 2 })
-  const mcap    = coin.market_cap ? `$${fmt(coin.market_cap, { notation: "compact", maximumFractionDigits: 2 })}` : "—"
-  const vol     = coin.volume_24h ? `$${fmt(coin.volume_24h, { notation: "compact", maximumFractionDigits: 2 })}` : "—"
+  const change = coin.change_24h_pct ?? 0
+  const color = getColor(change)
+  const isUp = change >= 0
+  const cfg = ORBIT_CONFIG[cfgIdx]
+  const fmt = (n, o) => n != null ? new Intl.NumberFormat("en-US", o).format(n) : "—"
+  const price = formatPrice(coin.current_price)
+  const mcap = coin.market_cap ? `$${fmt(coin.market_cap, { notation: "compact", maximumFractionDigits: 2 })}` : "—"
+  const vol = coin.volume_24h ? `$${fmt(coin.volume_24h, { notation: "compact", maximumFractionDigits: 2 })}` : "—"
 
   const volScore = Math.min(1, Math.abs(change) / 12)
   const liqScore = Math.min(1, ((coin.volume_24h ?? 0) / (coin.market_cap ?? 1)) * 6)
@@ -390,7 +405,7 @@ function GenomePanel({ coin, cfgIdx, onClose }) {
       animate={{ opacity: 1, x: 0, scale: 1 }}
       exit={{ opacity: 0, x: 16, scale: 0.93 }}
       transition={{ duration: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
-      className="absolute top-8 right-3 z-30 w-62"
+      className="absolute top-10 right-4 z-30 w-62 max-h-[88%] overflow-y-auto scrollbar-hide"
       style={{ width: 248, background: "#010b1b", border: `1.5px solid ${color}55`, borderRadius: "18px", boxShadow: `0 28px 72px rgba(0,0,0,0.99), 0 0 40px ${color}15, inset 0 1px 0 rgba(255,255,255,0.04)` }}
     >
       <div className="p-4">
@@ -430,10 +445,10 @@ function GenomePanel({ coin, cfgIdx, onClose }) {
         {/* Genome bars */}
         <div className="space-y-2.5 mb-4">
           {[
-            { label: "Volatility",    val: volScore, tip: "How violently price swings" },
-            { label: "Liquidity",     val: liqScore, tip: "Volume ÷ market cap ratio" },
-            { label: "Momentum",      val: momScore, tip: "Directional price strength" },
-            { label: "Dominance",     val: domScore, tip: "Share of global crypto market" },
+            { label: "Volatility", val: volScore, tip: "How violently price swings" },
+            { label: "Liquidity", val: liqScore, tip: "Volume ÷ market cap ratio" },
+            { label: "Momentum", val: momScore, tip: "Directional price strength" },
+            { label: "Dominance", val: domScore, tip: "Share of global crypto market" },
           ].map(({ label, val, tip }) => (
             <div key={label}>
               <div className="flex justify-between font-mono text-[8px] mb-1">
@@ -493,14 +508,14 @@ export default function GenomeSpace() {
     [ringCoins]
   )
 
-  const [selected,  setSelected]  = useState(null)   // coin object
-  const [hovered,   setHovered]   = useState(null)   // symbol string
+  const [selected, setSelected] = useState(null)   // coin object
+  const [hovered, setHovered] = useState(null)   // symbol string
 
   const handleSelect = useCallback((coin) => {
     setSelected(prev => prev?.symbol === coin.symbol ? null : coin)
   }, [])
   const handleDeselect = useCallback(() => setSelected(null), [])
-  const handleHover    = useCallback((symbol) => setHovered(symbol), [])
+  const handleHover = useCallback((symbol) => setHovered(symbol), [])
 
   return (
     <div className="w-full h-full relative select-none overflow-hidden">
@@ -510,7 +525,7 @@ export default function GenomeSpace() {
 
       {/* 3D canvas */}
       <Canvas
-        camera={{ position: [0, 13, 23], fov: 52 }}
+        camera={{ position: [0, 2.8, 20], fov: 50 }}
         dpr={[1, 1.5]}
         gl={{ antialias: true }}
         onPointerMissed={handleDeselect}
@@ -518,9 +533,9 @@ export default function GenomeSpace() {
       >
         <Stars radius={150} depth={90} count={3000} factor={2.8} fade speed={0.45} />
         <ambientLight intensity={0.08} />
-        <pointLight position={[0, 12, 0]}    color="#00CFFF" intensity={1.4} />
-        <pointLight position={[-14,-6,-10]} color="#7B2FBE" intensity={1.0} />
-        <pointLight position={[14, 4, 8]}   color="#00FF88" intensity={0.6} />
+        <pointLight position={[0, 12, 0]} color="#00CFFF" intensity={1.4} />
+        <pointLight position={[-14, -6, -10]} color="#7B2FBE" intensity={1.0} />
+        <pointLight position={[14, 4, 8]} color="#00FF88" intensity={0.6} />
 
         <MarketCore />
 
@@ -549,7 +564,7 @@ export default function GenomeSpace() {
       </Canvas>
 
       {/* Description */}
-      <div className="absolute top-9 left-3 z-10 pointer-events-none">
+      <div className="absolute top-12 left-4 z-10 pointer-events-none">
         <p className="text-[8.5px] font-mono text-slate-500 leading-relaxed">
           <span className="font-bold" style={{ color: "#00CFFF" }}>MARKET ORBITS</span>
           {" "}— inner ring = biggest coins · outer = smaller caps
@@ -557,7 +572,7 @@ export default function GenomeSpace() {
       </div>
 
       {/* Legend */}
-      <div className="absolute bottom-3 left-3 z-10 p-2.5 rounded-xl border"
+      <div className="absolute bottom-12 left-4 z-10 p-2.5 rounded-xl border"
         style={{ background: "rgba(1,11,27,0.94)", borderColor: "rgba(255,255,255,0.07)" }}>
         <div className="font-mono text-[7.5px] text-slate-600 uppercase tracking-widest mb-2">Market Cap Tiers</div>
         {ORBIT_CONFIG.map((cfg, i) => (
