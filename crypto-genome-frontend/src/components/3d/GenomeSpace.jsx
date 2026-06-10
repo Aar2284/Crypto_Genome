@@ -8,17 +8,17 @@ import useCryptoStore from "../../store/useCryptoStore.js"
 // ── Config ────────────────────────────────────────────────────────────────────
 const ORBIT_CONFIG = [
   { radius: 3.2, tiltDeg: 6, speed: 0.55, ringColor: "#FFD700", tier: "Tier 1 · Mega Cap" },
-  { radius: 5.5, tiltDeg: 20, speed: 0.35, ringColor: "#00CFFF", tier: "Tier 2 · Large Cap" },
-  { radius: 8.2, tiltDeg: 30, speed: 0.21, ringColor: "#00FF88", tier: "Tier 3 · Mid Cap" },
-  { radius: 11.4, tiltDeg: 12, speed: 0.12, ringColor: "#A855F7", tier: "Tier 4 · Small Cap" },
+  { radius: 5.5, tiltDeg: 20, speed: 0.35, ringColor: "#0066FF", tier: "Tier 2 · Large Cap" },
+  { radius: 8.2, tiltDeg: 30, speed: 0.21, ringColor: "#E022FF", tier: "Tier 3 · Mid Cap" },
+  { radius: 11.4, tiltDeg: 12, speed: 0.12, ringColor: "#00E5FF", tier: "Tier 4 · Small Cap" },
 ]
 const COINS_PER_RING = [2, 6, 14, 18]
 
 function getColor(change) {
-  if (change > 5) return "#00FF88"
-  if (change > 0) return "#00CFFF"
-  if (change > -5) return "#FF8C00"
-  return "#FF3366"
+  if (change > 5) return "#29F660"
+  if (change > 0) return "#D9F520"
+  if (change > -5) return "#FF8800"
+  return "#FF1111"
 }
 function getCoinRadius(mcap) {
   return Math.max(0.25, Math.min(0.75, Math.log10((mcap ?? 1e9) + 1) / 16))
@@ -94,14 +94,14 @@ function MarketCore() {
       {halos.map((h, i) => (
         <mesh key={i} ref={h}>
           <sphereGeometry args={[1.4 + i * 0.5, 16, 16]} />
-          <meshBasicMaterial color="#00CFFF" transparent opacity={0.04} />
+          <meshBasicMaterial color="#00E5FF" transparent opacity={0.04} />
         </mesh>
       ))}
 
       {/* Core sphere */}
       <mesh ref={innerRef}>
         <sphereGeometry args={[0.55, 28, 28]} />
-        <meshStandardMaterial color="#00CFFF" emissive="#00CFFF" emissiveIntensity={2} />
+        <meshStandardMaterial color="#00E5FF" emissive="#00E5FF" emissiveIntensity={2} />
       </mesh>
 
       {/* Gyroscope rings */}
@@ -111,16 +111,16 @@ function MarketCore() {
       </mesh>
       <mesh ref={ring2Ref} rotation={[Math.PI / 2, 0, 0]}>
         <torusGeometry args={[1.1, 0.018, 4, 80]} />
-        <meshBasicMaterial color="#00FF88" transparent opacity={0.55} />
+        <meshBasicMaterial color="#0066FF" transparent opacity={0.55} />
       </mesh>
       <mesh ref={ring3Ref} rotation={[Math.PI / 4, 0, 0]}>
         <torusGeometry args={[1.1, 0.014, 4, 80]} />
-        <meshBasicMaterial color="#A855F7" transparent opacity={0.5} />
+        <meshBasicMaterial color="#29F660" transparent opacity={0.5} />
       </mesh>
 
       {/* Label */}
       <Html center position={[0, 1.8, 0]} style={{ pointerEvents: "none" }}>
-        <div style={{ fontFamily: "JetBrains Mono", fontSize: "7.5px", color: "#00CFFF", opacity: 0.55, letterSpacing: "0.12em", whiteSpace: "nowrap" }}>
+        <div style={{ fontFamily: "JetBrains Mono", fontSize: "7.5px", color: "#00E5FF", opacity: 0.55, letterSpacing: "0.12em", whiteSpace: "nowrap" }}>
           ◆ MARKET CORE
         </div>
       </Html>
@@ -209,19 +209,19 @@ function OrbitalCoin({ coin, ringColor, isSelected, isDimmed, onSelect, onHover 
         onPointerDown={(e) => { e.stopPropagation(); onSelect(coin) }}
       >
         <sphereGeometry args={[r * 3.5, 6, 6]} />
-        <meshBasicMaterial transparent opacity={0} />
+        <meshBasicMaterial visible={false} />
       </mesh>
 
       {/* Halo */}
       <mesh ref={haloRef}>
         <sphereGeometry args={[r * 2.6, 10, 10]} />
-        <meshBasicMaterial color={color} transparent opacity={0} />
+        <meshBasicMaterial color={color} transparent opacity={0} depthWrite={false} />
       </mesh>
 
       {/* Core */}
       <mesh ref={coreRef}>
         <sphereGeometry args={[r, 18, 18]} />
-        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={1.4} transparent roughness={0.2} />
+        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={1.4} transparent opacity={1} roughness={0.2} depthWrite={false} />
       </mesh>
 
       {/* Selection fx */}
@@ -306,14 +306,14 @@ function OrbitalRing({ coins, cfgIdx, selectedSymbol, hoveredSymbol, onSelect, o
 
           return (
             <group key={coin.symbol}>
-              {/* Comet trail */}
-              {!isDimmed && (
+              {/* Comet trail - removed to keep clean round planets */}
+              {/* {!isDimmed && (
                 <CometTrail
                   angle={angle}
                   radius={radius}
                   color={getColor(coin.change_24h_pct ?? 0)}
                 />
-              )}
+              )} */}
               {/* Coin */}
               <group position={[x, 0, z]}>
                 <OrbitalCoin
@@ -389,7 +389,7 @@ function GenomePanel({ coin, cfgIdx, onClose }) {
           stroke={i === cfgIdx ? c.ringColor : `${c.ringColor}35`}
           strokeWidth={i === cfgIdx ? 1.5 : 0.6} />
       ))}
-      <circle cx={0} cy={0} r={2.5} fill="#00CFFF" opacity={0.9} />
+      <circle cx={0} cy={0} r={2.5} fill="#00E5FF" opacity={0.9} />
       {/* Selected coin dot on its ring */}
       {(() => {
         const r = 8 + cfgIdx * 7
@@ -566,7 +566,7 @@ export default function GenomeSpace() {
       {/* Description */}
       <div className="absolute top-12 left-4 z-10 pointer-events-none">
         <p className="text-[8.5px] font-mono text-slate-500 leading-relaxed">
-          <span className="font-bold" style={{ color: "#00CFFF" }}>MARKET ORBITS</span>
+          <span className="font-bold" style={{ color: "#00E5FF" }}>MARKET ORBITS</span>
           {" "}— inner ring = biggest coins · outer = smaller caps
         </p>
       </div>
@@ -584,10 +584,10 @@ export default function GenomeSpace() {
         <div className="border-t mt-2 pt-2" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
           <div className="font-mono text-[7.5px] text-slate-600 uppercase tracking-widest mb-1.5">24h Color</div>
           {[
-            { c: "#00FF88", l: "Strong gain > +5%" },
-            { c: "#00CFFF", l: "Mild gain 0–+5%" },
-            { c: "#FF8C00", l: "Mild loss 0–−5%" },
-            { c: "#FF3366", l: "Strong loss < −5%" },
+            { c: "#29F660", l: "Strong gain > +5%" },
+            { c: "#D9F520", l: "Mild gain 0–+5%" },
+            { c: "#FF8800", l: "Mild loss 0–−5%" },
+            { c: "#FF1111", l: "Strong loss < −5%" },
           ].map(({ c, l }) => (
             <div key={l} className="flex items-center gap-2 mb-1 last:mb-0">
               <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: c, boxShadow: `0 0 5px ${c}` }} />
