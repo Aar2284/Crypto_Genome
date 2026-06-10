@@ -15,13 +15,13 @@ const ORBIT_CONFIG = [
 const COINS_PER_RING = [2, 6, 14, 18]
 
 function getColor(change) {
-  if (change > 5) return "#29F660"
-  if (change > 0) return "#D9F520"
-  if (change > -5) return "#FF8800"
-  return "#FF1111"
+  if (change > 5) return "#00FF00"
+  if (change > 0) return "#FFFF00"
+  if (change > -5) return "#FF3300"
+  return "#FF0000"
 }
 function getCoinRadius(mcap) {
-  return Math.max(0.25, Math.min(0.75, Math.log10((mcap ?? 1e9) + 1) / 16))
+  return Math.max(0.08, Math.min(0.28, Math.log10((mcap ?? 1e9) + 1) / 38))
 }
 
 function formatPrice(price) {
@@ -190,13 +190,13 @@ function OrbitalCoin({ coin, ringColor, isSelected, isDimmed, onSelect, onHover 
           ? 1.2 + Math.sin(t * 4) * 0.08
           : 1 + Math.sin(t * 1.3) * 0.04
       coreRef.current.scale.setScalar(scale)
-      coreRef.current.material.emissiveIntensity = isSelected ? 4 : hov ? 2.8 : isDimmed ? 0.4 : 1.4
+      coreRef.current.material.emissiveIntensity = isSelected ? 3.5 : hov ? 2.2 : isDimmed ? 0.4 : 1.4
       coreRef.current.material.opacity = isDimmed ? 0.35 : 1
     }
     if (haloRef.current) {
       haloRef.current.material.opacity = active
-        ? 0.2 + Math.sin(t * 5) * 0.08
-        : isDimmed ? 0 : 0
+        ? 0.35 + Math.sin(t * 5) * 0.08
+        : isDimmed ? 0 : 0.18 + Math.sin(t * 1.5) * 0.04
     }
   })
 
@@ -221,7 +221,7 @@ function OrbitalCoin({ coin, ringColor, isSelected, isDimmed, onSelect, onHover 
       {/* Core */}
       <mesh ref={coreRef}>
         <sphereGeometry args={[r, 18, 18]} />
-        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={1.4} transparent opacity={1} roughness={0.2} depthWrite={false} />
+        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={1.4} toneMapped={false} transparent opacity={1} roughness={0.2} depthWrite={false} />
       </mesh>
 
       {/* Selection fx */}
@@ -584,10 +584,10 @@ export default function GenomeSpace() {
         <div className="border-t mt-2 pt-2" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
           <div className="font-mono text-[7.5px] text-slate-600 uppercase tracking-widest mb-1.5">24h Color</div>
           {[
-            { c: "#29F660", l: "Strong gain > +5%" },
-            { c: "#D9F520", l: "Mild gain 0–+5%" },
-            { c: "#FF8800", l: "Mild loss 0–−5%" },
-            { c: "#FF1111", l: "Strong loss < −5%" },
+            { c: "#00FF00", l: "Strong gain > +5%" },
+            { c: "#FFFF00", l: "Mild gain 0–+5%" },
+            { c: "#FF3300", l: "Mild loss 0–−5%" },
+            { c: "#FF0000", l: "Strong loss < −5%" },
           ].map(({ c, l }) => (
             <div key={l} className="flex items-center gap-2 mb-1 last:mb-0">
               <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: c, boxShadow: `0 0 5px ${c}` }} />
