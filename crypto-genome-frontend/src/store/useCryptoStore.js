@@ -23,6 +23,60 @@ const useCryptoStore = create((set, get) => ({
       lastUpdated: new Date().toISOString(),
       backendReachable: false,
     })
+    get().startLiveFallback()
+  },
+
+  startLiveFallback: () => {
+    if (get().fallbackWs) return; // Prevent multiple connections
+    console.log("[Client Fallback] Connecting directly to Binance Live Stream...")
+    const ws = new WebSocket("wss://stream.binance.com:9443/ws/!miniTicker@arr")
+    
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data)
+      const updates = {}
+      
+      // Parse Binance miniTicker array
+      data.forEach(item => {
+        if (item.s.endsWith("USDT")) {
+          const sym = item.s.replace("USDT", "")
+          const open = parseFloat(item.o)
+          const close = parseFloat(item.c)
+          const change = open > 0 ? ((close - open) / open) * 100 : 0
+          
+          updates[sym] = {
+            current_price: close,
+            change_24h_pct: change,
+            volume_24h: parseFloat(item.q) // Quote volume
+          }
+        }
+      })
+
+      // Batch update the zustand store
+      set(state => {
+        let updatedCount = 0
+        const newData = state.cryptoData.map(coin => {
+          if (updates[coin.symbol]) {
+            updatedCount++
+            return { ...coin, ...updates[coin.symbol] }
+          }
+          return coin
+        })
+        
+        // Only trigger a re-render if we actually updated mapped coins
+        if (updatedCount > 0) {
+          return { cryptoData: newData, lastUpdated: new Date().toISOString() }
+        }
+        return state
+      })
+    }
+    
+    ws.onclose = () => {
+      console.log("[Client Fallback] Connection lost. Reconnecting in 3s...")
+      set({ fallbackWs: null })
+      setTimeout(() => get().startLiveFallback(), 3000)
+    }
+
+    set({ fallbackWs: ws })
   },
 
   // Called only after WebSocket connects (backend confirmed alive)
