@@ -9,6 +9,7 @@ python-dotenv>=1.0.0
 alembic>=1.12.0
 pandas
 numpy
+scipy
 scikit-learn
 kafka-python
 aiohttp
