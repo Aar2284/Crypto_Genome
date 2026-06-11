@@ -284,3 +284,39 @@ backend/Pipelining/Airflow/logs/
 CryptoGenome_PhaseWise_Documentation.txt
 CryptoGenome_PhaseWise_Documentation.docx
 read_docx.py
+
+# =====================
+# ML Artifacts & Computed Outputs
+# =====================
+# Trained model binaries — too large and environment-specific for git
+backend/ML/model/*.pkl
+backend/ML/model/*.joblib
+
+# Intermediate / computed CSV outputs from ML scripts
+backend/ML/coin_genome_computed.csv
+backend/ML/PCA/genome_pca.csv
+backend/ML/Clustering\ (GMM)/genome_clusters.csv
+backend/ML/Cluster\ Labeling/genome_clusters_labeled.csv
+backend/ML/Cluster\ Labeling/cluster_summary.csv
+backend/Scaling/crypto_genome_scaled.csv
+
+# =====================
+# Environment / Secrets
+# =====================
+backend/.env
+backend/.env.local
+backend/.env.*.local
+backend/Pipelining/Airflow/.env
+backend/Pipelining/Airflow/.env.local
+
+# =====================
+# Debug / Scratch Scripts
+# =====================
+backend/check_db.py
+
+# =====================
+# Frontend Build Output
+# =====================
+crypto-genome-frontend/dist/
+crypto-genome-frontend/.env.local
+crypto-genome-frontend/.env.*.local
