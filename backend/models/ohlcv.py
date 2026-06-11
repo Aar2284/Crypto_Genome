@@ -3,6 +3,7 @@ models/ohlcv.py — Daily OHLCV (Open/High/Low/Close/Volume) historical data.
 One row per coin per date — enforced via UniqueConstraint.
 Loaded once from standardized_datasets CSVs via load_datasets.py.
 """
+# pyrefly: ignore [missing-import]
 from sqlalchemy import Column, String, Float, Date, Integer, UniqueConstraint, Index
 from database.session import Base
 
