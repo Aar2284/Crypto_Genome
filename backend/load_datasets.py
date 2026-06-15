@@ -61,10 +61,10 @@ def safe_date(val: str) -> date | None:
 
 
 async def load_genome(session) -> tuple[int, int]:
-    """Load genome metrics from master CSV. Returns (loaded, skipped)."""
-    print("\n[Genome] Loading from crypto_genome_master.csv...")
-    loaded = 0
-    skipped = 0
+    """Load genome metrics from master CSV using UPSERT. Returns (upserted, unchanged)."""
+    print("\n[Genome] Upserting from crypto_genome_master.csv...")
+    upserted = 0
+    unchanged = 0
 
     with open(MASTER_CSV, newline="", encoding="utf-8") as f:
         rows = list(csv.DictReader(f))
@@ -74,27 +74,59 @@ async def load_genome(session) -> tuple[int, int]:
         if not symbol or symbol in SKIP_SYMBOLS:
             continue
 
-        # Check if already loaded
-        result = await session.execute(
-            text("SELECT symbol FROM coin_genome WHERE symbol = :sym"),
-            {"sym": symbol},
+        # Build values dict for all 20 metric columns
+        vals = {col: safe_float(row.get(col, "")) for col in GENOME_COLUMNS}
+
+        # UPSERT: insert or update all metric columns on conflict.
+        # cluster_id and cluster_label are NOT touched here — they are
+        # written exclusively by the GMM pipeline so they survive re-runs.
+        await session.execute(
+            text("""
+                INSERT INTO coin_genome (
+                    symbol,
+                    volatility_baseline, volatility_skew, volatility_kurtosis, vol_of_vol,
+                    market_beta, btc_correlation, r_squared, downside_coupling,
+                    trend_efficiency, autocorrelation, up_day_ratio, risk_adjusted_momentum,
+                    max_drawdown, avg_drawdown_depth, avg_drawdown_duration, recovery_speed_ratio,
+                    log_avg_volume, volume_stability_cv, vol_return_correlation, crisis_liquidity_retention
+                ) VALUES (
+                    :symbol,
+                    :volatility_baseline, :volatility_skew, :volatility_kurtosis, :vol_of_vol,
+                    :market_beta, :btc_correlation, :r_squared, :downside_coupling,
+                    :trend_efficiency, :autocorrelation, :up_day_ratio, :risk_adjusted_momentum,
+                    :max_drawdown, :avg_drawdown_depth, :avg_drawdown_duration, :recovery_speed_ratio,
+                    :log_avg_volume, :volume_stability_cv, :vol_return_correlation, :crisis_liquidity_retention
+                )
+                ON CONFLICT (symbol) DO UPDATE SET
+                    volatility_baseline      = EXCLUDED.volatility_baseline,
+                    volatility_skew          = EXCLUDED.volatility_skew,
+                    volatility_kurtosis      = EXCLUDED.volatility_kurtosis,
+                    vol_of_vol               = EXCLUDED.vol_of_vol,
+                    market_beta              = EXCLUDED.market_beta,
+                    btc_correlation          = EXCLUDED.btc_correlation,
+                    r_squared                = EXCLUDED.r_squared,
+                    downside_coupling        = EXCLUDED.downside_coupling,
+                    trend_efficiency         = EXCLUDED.trend_efficiency,
+                    autocorrelation          = EXCLUDED.autocorrelation,
+                    up_day_ratio             = EXCLUDED.up_day_ratio,
+                    risk_adjusted_momentum   = EXCLUDED.risk_adjusted_momentum,
+                    max_drawdown             = EXCLUDED.max_drawdown,
+                    avg_drawdown_depth       = EXCLUDED.avg_drawdown_depth,
+                    avg_drawdown_duration    = EXCLUDED.avg_drawdown_duration,
+                    recovery_speed_ratio     = EXCLUDED.recovery_speed_ratio,
+                    log_avg_volume           = EXCLUDED.log_avg_volume,
+                    volume_stability_cv      = EXCLUDED.volume_stability_cv,
+                    vol_return_correlation   = EXCLUDED.vol_return_correlation,
+                    crisis_liquidity_retention = EXCLUDED.crisis_liquidity_retention,
+                    loaded_at                = now()
+            """),
+            {"symbol": symbol, **vals},
         )
-        if result.fetchone():
-            skipped += 1
-            continue
-
-        # Build genome record
-        genome = CoinGenome(symbol=symbol)
-        for col in GENOME_COLUMNS:
-            val = safe_float(row.get(col, ""))
-            setattr(genome, col, val)
-
-        session.add(genome)
-        loaded += 1
+        upserted += 1
 
     await session.commit()
-    print("[Genome] Loaded: {}  Skipped: {} (already existed)".format(loaded, skipped))
-    return loaded, skipped
+    print(f"[Genome] Upserted: {upserted}  Skipped (benchmarks): {unchanged}")
+    return upserted, unchanged
 
 
 async def load_ohlcv(session) -> tuple[int, int]:

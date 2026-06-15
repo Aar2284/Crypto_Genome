@@ -1,9 +1,10 @@
 """
 models/genome.py — SQLAlchemy model for crypto genome metrics.
 21 float columns covering 5 genome dimensions derived from historical analysis.
-One row per coin, updated at most once (static analytical data).
+One row per coin — updated by the genome refresh pipeline (upsert).
+cluster_id and cluster_label are populated by the GMM clustering step.
 """
-from sqlalchemy import Column, String, Float, DateTime, UniqueConstraint
+from sqlalchemy import Column, String, Float, Integer, DateTime, UniqueConstraint
 from sqlalchemy.sql import func
 from database.session import Base
 
@@ -43,7 +44,8 @@ class CoinGenome(Base):
     vol_return_correlation = Column(Float, nullable=True)
     crisis_liquidity_retention = Column(Float, nullable=True)
 
-    # ── Not in the 20 above — extra composite metric ──────────────────────────
-    # (Some CSVs may include additional metrics; captured here as bonus)
+    # ── Cluster Identity (populated by GMM pipeline) ───────────────────────────
+    cluster_id = Column(Integer, nullable=True)
+    cluster_label = Column(String, nullable=True)
 
     loaded_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
