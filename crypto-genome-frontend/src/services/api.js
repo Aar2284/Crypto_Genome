@@ -71,4 +71,10 @@ export const fetchRowCount = (signal) =>
 export const fetchPriceHistory = (symbol, hours = 24, signal) =>
   api.get(`/api/v1/market/assets/${symbol}/history?limit=${hours}`, { signal })
 
+export const fetchGenomeData = (signal) =>
+  api.get("/api/v1/genome", { signal })
+
+export const fetchClusterSummary = (signal) =>
+  api.get("/api/v1/genome/clusters", { signal })
+
 export default api

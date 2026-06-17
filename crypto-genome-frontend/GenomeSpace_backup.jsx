@@ -1,30 +1,16 @@
-import { useRef, useMemo, useState, useCallback, useEffect } from "react"
+﻿import { useRef, useMemo, useState, useCallback, useEffect } from "react"
 import { Canvas, useFrame } from "@react-three/fiber"
 import { OrbitControls, Stars, Html, Line } from "@react-three/drei"
 import { motion, AnimatePresence } from "framer-motion"
 import * as THREE from "three"
 import useCryptoStore from "../../store/useCryptoStore.js"
 
-// ── Cluster color palette (matches implementation plan) ────────────────────────
-const CLUSTER_COLORS = {
-  "Core Market":             "#3B82F6",  // Blue
-  "Market Followers":        "#8B5CF6",  // Purple
-  "Speculative Rockets":     "#F59E0B",  // Amber
-  "High-Risk Independents":  "#EF4444",  // Red
-  "Anomalous Outliers":      "#10B981",  // Emerald
-}
-const CLUSTER_DEFAULT = "#64748B" // Slate for unassigned
-
-function getClusterColor(clusterLabel) {
-  return CLUSTER_COLORS[clusterLabel] ?? CLUSTER_DEFAULT
-}
-
-// ── Config ────────────────────────────────────────────────────────────────────
+// ΓöÇΓöÇ Config ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 const ORBIT_CONFIG = [
-  { radius: 3.2, tiltDeg: 6, speed: 0.55, ringColor: "#FFD700", tier: "Tier 1 · Mega Cap" },
-  { radius: 5.5, tiltDeg: 20, speed: 0.35, ringColor: "#0066FF", tier: "Tier 2 · Large Cap" },
-  { radius: 8.2, tiltDeg: 30, speed: 0.21, ringColor: "#E022FF", tier: "Tier 3 · Mid Cap" },
-  { radius: 11.4, tiltDeg: 12, speed: 0.12, ringColor: "#00E5FF", tier: "Tier 4 · Small Cap" },
+  { radius: 3.2, tiltDeg: 6, speed: 0.55, ringColor: "#FFD700", tier: "Tier 1 ┬╖ Mega Cap" },
+  { radius: 5.5, tiltDeg: 20, speed: 0.35, ringColor: "#0066FF", tier: "Tier 2 ┬╖ Large Cap" },
+  { radius: 8.2, tiltDeg: 30, speed: 0.21, ringColor: "#E022FF", tier: "Tier 3 ┬╖ Mid Cap" },
+  { radius: 11.4, tiltDeg: 12, speed: 0.12, ringColor: "#00E5FF", tier: "Tier 4 ┬╖ Small Cap" },
 ]
 const COINS_PER_RING = [2, 6, 14, 18]
 
@@ -39,14 +25,14 @@ function getCoinRadius(mcap) {
 }
 
 function formatPrice(price) {
-  if (price == null) return "—"
+  if (price == null) return "ΓÇö"
   if (price < 0.01) {
     return "$" + price.toLocaleString(undefined, { maximumSignificantDigits: 4 })
   }
   return "$" + price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
-// ── Instanced dust particles along each orbit ──────────────────────────────────
+// ΓöÇΓöÇ Instanced dust particles along each orbit ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 function OrbitalDust({ radius, tiltDeg, color }) {
   const ref = useRef()
   const COUNT = 140
@@ -77,7 +63,7 @@ function OrbitalDust({ radius, tiltDeg, color }) {
   )
 }
 
-// ── Pulsing gyroscope core ────────────────────────────────────────────────────
+// ΓöÇΓöÇ Pulsing gyroscope core ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 function MarketCore() {
   const innerRef = useRef()
   const ring1Ref = useRef()
@@ -135,14 +121,14 @@ function MarketCore() {
       {/* Label */}
       <Html center position={[0, 1.8, 0]} style={{ pointerEvents: "none" }}>
         <div style={{ fontFamily: "JetBrains Mono", fontSize: "7.5px", color: "#00E5FF", opacity: 0.55, letterSpacing: "0.12em", whiteSpace: "nowrap" }}>
-          ◆ MARKET CORE
+          Γùå MARKET CORE
         </div>
       </Html>
     </group>
   )
 }
 
-// ── Comet trail ───────────────────────────────────────────────────────────────
+// ΓöÇΓöÇ Comet trail ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 function CometTrail({ angle, radius, color }) {
   const pts = useMemo(() => {
     const all = []
@@ -162,7 +148,7 @@ function CometTrail({ angle, radius, color }) {
   )
 }
 
-// ── Sparkle ring (selected state) ─────────────────────────────────────────────
+// ΓöÇΓöÇ Sparkle ring (selected state) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 function SparkleRing({ r, color }) {
   const ref = useRef()
   useFrame(({ clock }) => {
@@ -185,15 +171,13 @@ function SparkleRing({ r, color }) {
   )
 }
 
-// ── Single coin on orbit ───────────────────────────────────────────────────────
-function OrbitalCoin({ coin, ringColor, isSelected, isDimmed, onSelect, onHover, colorMode }) {
+// ΓöÇΓöÇ Single coin on orbit ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+function OrbitalCoin({ coin, ringColor, isSelected, isDimmed, onSelect, onHover }) {
   const coreRef = useRef()
   const haloRef = useRef()
   const [hov, setHov] = useState(false)
   const active = isSelected || hov
-  const changeColor = getColor(coin.change_24h_pct ?? 0)
-  const clusterColor = getClusterColor(coin.cluster_label)
-  const color = colorMode === "cluster" ? clusterColor : changeColor
+  const color = getColor(coin.change_24h_pct ?? 0)
   const r = getCoinRadius(coin.market_cap)
   const change = coin.change_24h_pct ?? 0
 
@@ -276,12 +260,12 @@ function OrbitalCoin({ coin, ringColor, isSelected, isDimmed, onSelect, onHover,
               transition: "all 0.12s ease",
               letterSpacing: "0.04em",
             }}>
-              <span style={{ color: ringColor, marginRight: "5px", fontSize: "0.75em", opacity: 0.85 }}>●</span>
+              <span style={{ color: ringColor, marginRight: "5px", fontSize: "0.75em", opacity: 0.85 }}>ΓùÅ</span>
               {coin.symbol}
             </div>
             {active && (
               <div style={{ fontSize: "10px", color, fontWeight: 700, marginTop: "3px", textShadow: `0 0 5px ${color}88` }}>
-                {change >= 0 ? "▲" : "▼"} {Math.abs(change).toFixed(1)}%
+                {change >= 0 ? "Γû▓" : "Γû╝"} {Math.abs(change).toFixed(1)}%
               </div>
             )}
           </div>
@@ -291,8 +275,8 @@ function OrbitalCoin({ coin, ringColor, isSelected, isDimmed, onSelect, onHover,
   )
 }
 
-// ── One orbital ring with dust + trail + coins ─────────────────────────────────
-function OrbitalRing({ coins, cfgIdx, selectedSymbol, hoveredSymbol, onSelect, onHover, colorMode }) {
+// ΓöÇΓöÇ One orbital ring with dust + trail + coins ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+function OrbitalRing({ coins, cfgIdx, selectedSymbol, hoveredSymbol, onSelect, onHover }) {
   const { radius, tiltDeg, speed, ringColor } = ORBIT_CONFIG[cfgIdx]
   const spinRef = useRef()
   const tiltRad = (tiltDeg * Math.PI) / 180
@@ -322,6 +306,14 @@ function OrbitalRing({ coins, cfgIdx, selectedSymbol, hoveredSymbol, onSelect, o
 
           return (
             <group key={coin.symbol}>
+              {/* Comet trail - removed to keep clean round planets */}
+              {/* {!isDimmed && (
+                <CometTrail
+                  angle={angle}
+                  radius={radius}
+                  color={getColor(coin.change_24h_pct ?? 0)}
+                />
+              )} */}
               {/* Coin */}
               <group position={[x, 0, z]}>
                 <OrbitalCoin
@@ -331,7 +323,6 @@ function OrbitalRing({ coins, cfgIdx, selectedSymbol, hoveredSymbol, onSelect, o
                   isDimmed={isDimmed}
                   onSelect={onSelect}
                   onHover={onHover}
-                  colorMode={colorMode}
                 />
               </group>
             </group>
@@ -342,7 +333,7 @@ function OrbitalRing({ coins, cfgIdx, selectedSymbol, hoveredSymbol, onSelect, o
   )
 }
 
-// ── Scrolling price ticker ─────────────────────────────────────────────────────
+// ΓöÇΓöÇ Scrolling price ticker ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 function PriceTicker({ coins }) {
   const items = useMemo(() =>
     [...coins, ...coins].map((c, i) => ({
@@ -364,7 +355,7 @@ function PriceTicker({ coins }) {
             <span key={c.key} style={{ fontFamily: "JetBrains Mono", fontSize: "10px", display: "inline-flex", alignItems: "center", gap: "5px", flexShrink: 0 }}>
               <span style={{ color, fontWeight: 700 }}>{c.symbol}</span>
               <span style={{ color: "rgba(200,215,235,0.75)" }}>{price}</span>
-              <span style={{ color, fontWeight: 600 }}>{c.change_24h_pct >= 0 ? "▲" : "▼"}{Math.abs(c.change_24h_pct ?? 0).toFixed(1)}%</span>
+              <span style={{ color, fontWeight: 600 }}>{c.change_24h_pct >= 0 ? "Γû▓" : "Γû╝"}{Math.abs(c.change_24h_pct ?? 0).toFixed(1)}%</span>
             </span>
           )
         })}
@@ -373,24 +364,22 @@ function PriceTicker({ coins }) {
   )
 }
 
-// ── Detail panel ───────────────────────────────────────────────────────────────
+// ΓöÇΓöÇ Detail panel ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 function GenomePanel({ coin, cfgIdx, onClose }) {
   if (!coin) return null
   const change = coin.change_24h_pct ?? 0
   const color = getColor(change)
   const isUp = change >= 0
   const cfg = ORBIT_CONFIG[cfgIdx]
-  const fmt = (n, o) => n != null ? new Intl.NumberFormat("en-US", o).format(n) : "—"
+  const fmt = (n, o) => n != null ? new Intl.NumberFormat("en-US", o).format(n) : "ΓÇö"
   const price = formatPrice(coin.current_price)
-  const mcap = coin.market_cap ? `$${fmt(coin.market_cap, { notation: "compact", maximumFractionDigits: 2 })}` : "—"
-  const vol = coin.volume_24h ? `$${fmt(coin.volume_24h, { notation: "compact", maximumFractionDigits: 2 })}` : "—"
+  const mcap = coin.market_cap ? `$${fmt(coin.market_cap, { notation: "compact", maximumFractionDigits: 2 })}` : "ΓÇö"
+  const vol = coin.volume_24h ? `$${fmt(coin.volume_24h, { notation: "compact", maximumFractionDigits: 2 })}` : "ΓÇö"
 
   const volScore = Math.min(1, Math.abs(change) / 12)
   const liqScore = Math.min(1, ((coin.volume_24h ?? 0) / (coin.market_cap ?? 1)) * 6)
   const momScore = Math.max(0, (change + 12) / 24)
   const domScore = Math.min(1, (coin.market_cap ?? 0) / 1.3e12)
-
-  const clusterColor = getClusterColor(coin.cluster_label)
 
   // Mini orbit ring diagram
   const RingDiagram = () => (
@@ -426,30 +415,21 @@ function GenomePanel({ coin, cfgIdx, onClose }) {
             <div className="font-display font-extrabold text-white text-lg leading-none">{coin.name}</div>
             <div className="font-mono text-[9px] mt-1.5 flex items-center gap-2" style={{ color }}>
               <span className="w-2 h-2 rounded-full animate-pulse inline-block" style={{ background: color, boxShadow: `0 0 7px ${color}` }} />
-              {coin.symbol} · Cryptocurrency
+              {coin.symbol} ┬╖ Cryptocurrency
             </div>
           </div>
           <button onClick={onClose}
             className="w-7 h-7 rounded-full flex items-center justify-center text-slate-500 hover:text-white text-xs transition-all hover:scale-110"
             style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.09)" }}>
-            ✕
+            Γ£ò
           </button>
         </div>
-
-        {/* Cluster badge */}
-        {coin.cluster_label && (
-          <div className="inline-flex items-center gap-1.5 font-mono text-[9px] px-2.5 py-1 rounded-full mb-2"
-            style={{ background: `${clusterColor}18`, border: `1px solid ${clusterColor}50`, color: clusterColor }}>
-            <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: clusterColor }} />
-            {coin.cluster_label}
-          </div>
-        )}
 
         {/* Price */}
         <div className="font-display font-extrabold text-white tabular-nums leading-none" style={{ fontSize: "22px" }}>{price}</div>
         <div className="inline-flex items-center gap-1.5 font-mono text-[11px] px-2.5 py-1 rounded-full mt-2 mb-3"
           style={{ background: `${color}18`, border: `1px solid ${color}40`, color }}>
-          {isUp ? "▲" : "▼"} {Math.abs(change).toFixed(2)}% past 24 hours
+          {isUp ? "Γû▓" : "Γû╝"} {Math.abs(change).toFixed(2)}% past 24 hours
         </div>
 
         {/* Orbit ring diagram + tier */}
@@ -466,7 +446,7 @@ function GenomePanel({ coin, cfgIdx, onClose }) {
         <div className="space-y-2.5 mb-4">
           {[
             { label: "Volatility", val: volScore, tip: "How violently price swings" },
-            { label: "Liquidity", val: liqScore, tip: "Volume ÷ market cap ratio" },
+            { label: "Liquidity", val: liqScore, tip: "Volume ├╖ market cap ratio" },
             { label: "Momentum", val: momScore, tip: "Directional price strength" },
             { label: "Dominance", val: domScore, tip: "Share of global crypto market" },
           ].map(({ label, val, tip }) => (
@@ -486,7 +466,7 @@ function GenomePanel({ coin, cfgIdx, onClose }) {
 
         {/* Stats grid */}
         <div className="grid grid-cols-2 gap-2">
-          {[{ l: "Market Cap", v: mcap, s: "Total coins × price" }, { l: "24h Volume", v: vol, s: "USD traded today" }].map(({ l, v, s }) => (
+          {[{ l: "Market Cap", v: mcap, s: "Total coins ├ù price" }, { l: "24h Volume", v: vol, s: "USD traded today" }].map(({ l, v, s }) => (
             <div key={l} className="p-2.5 rounded-xl" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
               <div className="font-mono text-[7px] text-slate-600 uppercase tracking-wide">{l}</div>
               <div className="font-mono text-sm text-white font-bold mt-0.5">{v}</div>
@@ -496,19 +476,16 @@ function GenomePanel({ coin, cfgIdx, onClose }) {
         </div>
 
         <div className="mt-3 font-mono text-[7px] text-slate-700 text-center border-t pt-2.5" style={{ borderColor: "rgba(255,255,255,0.05)" }}>
-          Click background to close · Scroll to zoom
+          Click background to close ┬╖ Scroll to zoom
         </div>
       </div>
     </motion.div>
   )
 }
 
-// ── Main export ───────────────────────────────────────────────────────────────
+// ΓöÇΓöÇ Main export ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 export default function GenomeSpace() {
-  const cryptoData    = useCryptoStore((s) => s.cryptoData)
-  const clusterSummary = useCryptoStore((s) => s.clusterSummary)
-  const colorMode     = useCryptoStore((s) => s.colorMode)
-  const setColorMode  = useCryptoStore((s) => s.setColorMode)
+  const cryptoData = useCryptoStore((s) => s.cryptoData)
 
   const ranked = useMemo(() =>
     [...(cryptoData ?? [])].sort((a, b) => (b.market_cap ?? 0) - (a.market_cap ?? 0)),
@@ -546,26 +523,6 @@ export default function GenomeSpace() {
       {/* Scrolling ticker */}
       <PriceTicker coins={ranked.slice(0, 40)} />
 
-      {/* Color mode toggle */}
-      <div className="absolute top-10 right-4 z-20 flex items-center gap-1 p-1 rounded-xl"
-        style={{ background: "rgba(1,11,27,0.92)", border: "1px solid rgba(255,255,255,0.09)" }}>
-        <span className="font-mono text-[7.5px] text-slate-500 px-1.5 uppercase tracking-widest">Color by</span>
-        {["change", "cluster"].map(mode => (
-          <button key={mode}
-            id={`color-mode-${mode}`}
-            onClick={() => setColorMode(mode)}
-            className="font-mono text-[8.5px] px-2.5 py-1 rounded-lg transition-all"
-            style={{
-              background: colorMode === mode ? "rgba(0,229,255,0.12)" : "transparent",
-              color: colorMode === mode ? "#00E5FF" : "#64748b",
-              border: colorMode === mode ? "1px solid rgba(0,229,255,0.35)" : "1px solid transparent",
-              fontWeight: colorMode === mode ? 700 : 400,
-            }}>
-            {mode === "change" ? "24h Change" : "Cluster"}
-          </button>
-        ))}
-      </div>
-
       {/* 3D canvas */}
       <Canvas
         camera={{ position: [0, 2.8, 20], fov: 50 }}
@@ -591,7 +548,6 @@ export default function GenomeSpace() {
             hoveredSymbol={hovered}
             onSelect={handleSelect}
             onHover={handleHover}
-            colorMode={colorMode}
           />
         ))}
 
@@ -611,62 +567,35 @@ export default function GenomeSpace() {
       <div className="absolute top-12 left-4 z-10 pointer-events-none">
         <p className="text-[8.5px] font-mono text-slate-500 leading-relaxed">
           <span className="font-bold" style={{ color: "#00E5FF" }}>MARKET ORBITS</span>
-          {" "}— inner ring = biggest coins · outer = smaller caps
+          {" "}ΓÇö inner ring = biggest coins ┬╖ outer = smaller caps
         </p>
       </div>
 
-      {/* Legend — switches between change colors and cluster colors */}
+      {/* Legend */}
       <div className="absolute bottom-12 left-4 z-10 p-2.5 rounded-xl border"
         style={{ background: "rgba(1,11,27,0.94)", borderColor: "rgba(255,255,255,0.07)" }}>
         <div className="font-mono text-[7.5px] text-slate-600 uppercase tracking-widest mb-2">Market Cap Tiers</div>
         {ORBIT_CONFIG.map((cfg, i) => (
           <div key={i} className="flex items-center gap-2 mb-1.5 last:mb-0">
             <div className="w-5 shrink-0" style={{ height: "2px", background: cfg.ringColor, boxShadow: `0 0 4px ${cfg.ringColor}` }} />
-            <span className="font-mono text-[8.5px] text-slate-400">{cfg.tier.split(" · ")[1]}</span>
+            <span className="font-mono text-[8.5px] text-slate-400">{cfg.tier.split(" ┬╖ ")[1]}</span>
           </div>
         ))}
         <div className="border-t mt-2 pt-2" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
-          {colorMode === "change" ? (
-            <>
-              <div className="font-mono text-[7.5px] text-slate-600 uppercase tracking-widest mb-1.5">24h Color</div>
-              {[
-                { c: "#00FF00", l: "Strong gain >+5%" },
-                { c: "#FFFF00", l: "Mild gain 0–+5%" },
-                { c: "#FF3300", l: "Mild loss 0–−5%" },
-                { c: "#FF0000", l: "Strong loss <−5%" },
-              ].map(({ c, l }) => (
-                <div key={l} className="flex items-center gap-2 mb-1 last:mb-0">
-                  <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: c, boxShadow: `0 0 5px ${c}` }} />
-                  <span className="font-mono text-[8.5px] text-slate-400">{l}</span>
-                </div>
-              ))}
-            </>
-          ) : (
-            <>
-              <div className="font-mono text-[7.5px] text-slate-600 uppercase tracking-widest mb-1.5">Cluster Color</div>
-              {clusterSummary.length > 0
-                ? clusterSummary.map(cl => (
-                    <div key={cl.cluster_id} className="flex items-center gap-2 mb-1 last:mb-0">
-                      <span className="w-2.5 h-2.5 rounded-full shrink-0"
-                        style={{ background: getClusterColor(cl.cluster_label), boxShadow: `0 0 5px ${getClusterColor(cl.cluster_label)}` }} />
-                      <span className="font-mono text-[8.5px] text-slate-400">
-                        {cl.cluster_label ?? `Cluster ${cl.cluster_id}`}
-                        <span className="text-slate-600"> ({cl.count})</span>
-                      </span>
-                    </div>
-                  ))
-                : Object.entries(CLUSTER_COLORS).map(([label, color]) => (
-                    <div key={label} className="flex items-center gap-2 mb-1 last:mb-0">
-                      <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: color, boxShadow: `0 0 5px ${color}` }} />
-                      <span className="font-mono text-[8.5px] text-slate-400">{label}</span>
-                    </div>
-                  ))
-              }
-            </>
-          )}
+          <div className="font-mono text-[7.5px] text-slate-600 uppercase tracking-widest mb-1.5">24h Color</div>
+          {[
+            { c: "#00FF00", l: "Strong gain > +5%" },
+            { c: "#FFFF00", l: "Mild gain 0ΓÇô+5%" },
+            { c: "#FF3300", l: "Mild loss 0ΓÇôΓêÆ5%" },
+            { c: "#FF0000", l: "Strong loss < ΓêÆ5%" },
+          ].map(({ c, l }) => (
+            <div key={l} className="flex items-center gap-2 mb-1 last:mb-0">
+              <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: c, boxShadow: `0 0 5px ${c}` }} />
+              <span className="font-mono text-[8.5px] text-slate-400">{l}</span>
+            </div>
+          ))}
         </div>
       </div>
-
 
       {/* Detail panel */}
       <AnimatePresence>
@@ -686,7 +615,7 @@ export default function GenomeSpace() {
             className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
             <div className="font-mono text-[8.5px] text-slate-500 whitespace-nowrap px-3 py-1.5 rounded-full border"
               style={{ background: "rgba(1,11,27,0.88)", borderColor: "rgba(255,255,255,0.07)" }}>
-              🖱 Scroll to zoom · Drag to tilt · Hover to highlight · Click to inspect
+              ≡ƒû▒ Scroll to zoom ┬╖ Drag to tilt ┬╖ Hover to highlight ┬╖ Click to inspect
             </div>
           </motion.div>
         )}

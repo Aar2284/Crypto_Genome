@@ -1,5 +1,5 @@
 import { create } from "zustand"
-import { fetchLatestCrypto, fetchMetrics, fetchPriceHistory } from "../services/api.js"
+import { fetchLatestCrypto, fetchMetrics, fetchPriceHistory, fetchGenomeData, fetchClusterSummary } from "../services/api.js"
 import { createMarketDataSlice } from "./slices/marketDataSlice.js"
 import { createMetricsSlice } from "./slices/metricsSlice.js"
 import { createUiNetworkSlice } from "./slices/uiNetworkSlice.js"
@@ -11,6 +11,12 @@ const useCryptoStore = create((set, get) => ({
   ...createUiNetworkSlice(set, get),
 
   backendReachable: false,
+
+  // Genome / cluster data
+  genomeData: {},        // keyed by symbol: { cluster_id, cluster_label, ...metrics }
+  clusterSummary: [],    // array of { cluster_id, cluster_label, count, avg_... }
+  colorMode: "change",   // "change" | "cluster"
+  setColorMode: (mode) => set({ colorMode: mode }),
 
   // Called on startup — ONLY loads mock data, no network requests
   // Real data is fetched only once the WebSocket confirms backend is alive
@@ -83,14 +89,29 @@ const useCryptoStore = create((set, get) => ({
   fetchAll: async (signal) => {
     get().clearError()
     try {
-      const [cryptoData, metrics, btcHistory] = await Promise.all([
+      const [cryptoData, metrics, btcHistory, genomeArray, clusterSummary] = await Promise.all([
         fetchLatestCrypto(signal),
         fetchMetrics(signal),
         fetchPriceHistory("BTC", 24, signal).catch(() => getMockBtcHistory()),
+        fetchGenomeData(signal).catch(() => []),
+        fetchClusterSummary(signal).catch(() => []),
       ])
 
+      // Build genome lookup map keyed by symbol
+      const genomeData = {}
+      genomeArray.forEach(g => { genomeData[g.symbol] = g })
+
+      // Merge cluster_id + cluster_label into each coin
+      const enrichedData = cryptoData.map(coin => ({
+        ...coin,
+        cluster_id: genomeData[coin.symbol]?.cluster_id ?? null,
+        cluster_label: genomeData[coin.symbol]?.cluster_label ?? null,
+      }))
+
       set((state) => ({
-        cryptoData,
+        cryptoData: enrichedData,
+        genomeData,
+        clusterSummary,
         metrics,
         btcHistory,
         loading: false,
