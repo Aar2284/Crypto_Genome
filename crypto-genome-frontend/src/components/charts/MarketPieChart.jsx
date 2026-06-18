@@ -1,9 +1,10 @@
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend } from "recharts"
 import { formatCurrency } from "../../utils/formatters"
-
-const COLORS = ["#00D4FF", "#00C896", "#7B2FBE", "#F59E0B", "#EC4899"]
+import useThemeColor from "../../hooks/useThemeColor.js"
 
 export default function MarketPieChart({ data }) {
+  const { accent, cyber, neon } = useThemeColor()
+  const COLORS = [accent, cyber, neon, "#F59E0B", "#EC4899"]
   if (!data || data.length === 0) {
     return <div className="h-full w-full flex items-center justify-center text-slate-500 font-mono">No data available</div>
   }

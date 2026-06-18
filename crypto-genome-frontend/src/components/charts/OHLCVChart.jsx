@@ -2,6 +2,7 @@ import { ResponsiveContainer, ComposedChart, Line, Bar, XAxis, YAxis, Tooltip, C
 import { formatCurrency } from "../../utils/formatters"
 import { format } from "date-fns"
 import { useMemo } from "react"
+import useThemeColor from "../../hooks/useThemeColor.js"
 
 // Custom candlestick bar shape
 const CandlestickBar = (props) => {
@@ -35,6 +36,7 @@ const CandlestickBar = (props) => {
 }
 
 export default function OHLCVChart({ data }) {
+  const { accent } = useThemeColor()
   if (!data || data.length === 0) {
     return (
       <div className="h-full w-full flex items-center justify-center text-slate-500 font-mono text-sm">
@@ -55,8 +57,8 @@ export default function OHLCVChart({ data }) {
       <ComposedChart data={chartData} margin={{ top: 10, right: 12, left: -10, bottom: 0 }}>
         <defs>
           <linearGradient id="volGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%"  stopColor="#00D4FF" stopOpacity={0.3} />
-            <stop offset="95%" stopColor="#00D4FF" stopOpacity={0.02} />
+            <stop offset="5%"  stopColor={accent} stopOpacity={0.3} />
+            <stop offset="95%" stopColor={accent} stopOpacity={0.02} />
           </linearGradient>
         </defs>
 
@@ -115,10 +117,10 @@ export default function OHLCVChart({ data }) {
           yAxisId="price"
           type="monotone"
           dataKey="close"
-          stroke="#00D4FF"
+          stroke={accent}
           strokeWidth={2}
           dot={false}
-          activeDot={{ r: 3, fill: "#00D4FF", strokeWidth: 0 }}
+          activeDot={{ r: 3, fill: accent, strokeWidth: 0 }}
         />
       </ComposedChart>
     </ResponsiveContainer>

@@ -1,4 +1,5 @@
 import { ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Legend, Tooltip } from "recharts"
+import useThemeColor from "../../hooks/useThemeColor.js"
 
 const DIMENSION_MAP = {
   dimension_1: "Volatility",
@@ -9,6 +10,7 @@ const DIMENSION_MAP = {
 }
 
 export default function GenomeRadarChart({ genomeData }) {
+  const { accent, cyber, neon } = useThemeColor()
   if (!genomeData || genomeData.length === 0) {
     return <div className="h-full w-full flex items-center justify-center text-slate-500 font-mono">No genome data available</div>
   }
@@ -25,7 +27,7 @@ export default function GenomeRadarChart({ genomeData }) {
     return dataPoint
   })
 
-  const COLORS = ["#00D4FF", "#00C896", "#7B2FBE"]
+  const COLORS = [accent, cyber, neon]
 
   return (
     <ResponsiveContainer width="100%" height="100%">

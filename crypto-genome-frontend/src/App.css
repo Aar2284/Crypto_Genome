@@ -4,8 +4,8 @@
 @tailwind utilities;
 
 @layer base {
-  :root { color-scheme: dark; --ink-950: 3 11 24; --ink-900: 9 24 43; --ink-800: 17 38 62; --accent-rgb: 0 212 255; --cyber-rgb: 41 246 160; --neon-rgb: 168 85 247; --line: rgba(118, 169, 214, .16); --card-rgb: 8 27 50; --card-hi: 28 61 91; --grid-rgb: 66 150 210; font-family: Inter, ui-sans-serif, system-ui, sans-serif; background: rgb(var(--ink-950)); }
-  :root[data-theme="light"] { color-scheme: light; --ink-950: 239 247 255; --ink-900: 250 253 255; --ink-800: 226 239 250; --accent-rgb: 0 126 182; --cyber-rgb: 0 139 98; --neon-rgb: 116 60 188; --line: rgba(47, 93, 135, .18); --card-rgb: 226 241 252; --card-hi: 255 255 255; --grid-rgb: 0 116 180; }
+  :root { color-scheme: dark; --ink-950: 3 11 24; --ink-900: 9 24 43; --ink-800: 17 38 62; --accent-rgb: 0 212 255; --cyber-rgb: 41 246 160; --neon-rgb: 168 85 247; --accent-hex: #00D4FF; --cyber-hex: #29F6A0; --neon-hex: #A855F7; --line: rgba(118, 169, 214, .16); --card-rgb: 8 27 50; --card-hi: 28 61 91; --grid-rgb: 66 150 210; font-family: Inter, ui-sans-serif, system-ui, sans-serif; background: rgb(var(--ink-950)); }
+  :root[data-theme="light"] { color-scheme: light; --ink-950: 250 245 255; --ink-900: 253 251 255; --ink-800: 237 233 254; --accent-rgb: 139 92 246; --cyber-rgb: 16 185 129; --neon-rgb: 217 70 239; --accent-hex: #8B5CF6; --cyber-hex: #10B981; --neon-hex: #D946EF; --line: rgba(139, 92, 246, .12); --card-rgb: 243 237 254; --card-hi: 255 255 255; --grid-rgb: 139 92 246; }
   * { box-sizing: border-box; }
   html { min-width: 320px; background: rgb(var(--ink-950)); }
   body { min-width: 320px; min-height: 100vh; margin: 0; background: rgb(var(--ink-950)); }
@@ -68,17 +68,114 @@ main [class*="bg-navy-800"]::after, .market-card::after { content: ""; position:
 .assets-terminal tbody tr::before { content: ""; position: absolute; left: 0; top: 50%; width: 3px; height: 40%; transform: translateY(-50%); background: rgba(var(--accent-rgb), .45); opacity: 0; transition: opacity 160ms ease; }
 .assets-terminal tbody tr:hover::before { opacity: 1; }
 .genome-terminal { background-image: linear-gradient(180deg, rgba(var(--card-hi), .16), transparent 24%), radial-gradient(circle at 50% 90%, rgba(var(--neon-rgb), .09), transparent 44%) !important; }
-:root[data-theme="light"] .text-white { color: #102a43 !important; }
-:root[data-theme="light"] .text-slate-400 { color: #4b647e !important; }
-:root[data-theme="light"] .text-slate-500, :root[data-theme="light"] .text-slate-600 { color: #64809a !important; }
-:root[data-theme="light"] [class*="border-white"] { border-color: rgba(47, 93, 135, .14) !important; }
-:root[data-theme="light"] .market-nav { box-shadow: 0 10px 30px rgba(68, 113, 150, .1), inset 0 -1px 0 rgba(var(--accent-rgb), .12); }
-:root[data-theme="light"] .star { background: rgba(19, 91, 145, .72); box-shadow: 0 0 5px 1px rgba(var(--accent-rgb), .36); }
-:root[data-theme="light"] .star-bright { background: #d98518; box-shadow: 0 0 5px 1px #f1b84f, 0 0 12px 3px rgba(var(--neon-rgb), .25); }
-:root[data-theme="light"] .chart-terminal .recharts-text { fill: rgba(29, 78, 116, .82) !important; }
-:root[data-theme="light"] .chart-terminal .recharts-cartesian-grid line { stroke: rgba(var(--accent-rgb), .18) !important; }
-:root[data-theme="light"] .assets-terminal thead { background: rgba(209, 231, 247, .72) !important; }
-:root[data-theme="light"] .market-grid::after { color: rgba(var(--accent-rgb), .5); }
+/* ═══════════════════════════════════════════════════════════════
+   LIGHT MODE — Lavender / Violet Theme
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Text ── */
+:root[data-theme="light"] .text-white { color: #2e1065 !important; }
+:root[data-theme="light"] .text-slate-400 { color: #6d28d9 !important; }
+:root[data-theme="light"] .text-slate-500, :root[data-theme="light"] .text-slate-600 { color: #7c3aed !important; }
+
+/* ── Borders ── */
+:root[data-theme="light"] [class*="border-white"] { border-color: rgba(139, 92, 246, .12) !important; }
+
+/* ── Navbar ── */
+:root[data-theme="light"] .market-nav { background: rgba(253, 251, 255, .88) !important; box-shadow: 0 10px 30px rgba(139, 92, 246, .08), inset 0 -1px 0 rgba(139, 92, 246, .15); }
+:root[data-theme="light"] .market-nav::after { background: linear-gradient(90deg, transparent, rgba(139, 92, 246, .55), rgba(217, 70, 239, .4), transparent) !important; }
+
+/* ── Brand orbit ── */
+:root[data-theme="light"] .brand-orbit { box-shadow: 0 0 16px rgba(139, 92, 246, .3); }
+:root[data-theme="light"] .brand-orbit::after { border-color: rgba(16, 185, 129, .4); }
+
+/* ── Theme toggle ── */
+:root[data-theme="light"] .theme-toggle { border-color: rgba(139, 92, 246, .22); box-shadow: inset 0 0 0 1px rgba(139, 92, 246, .10), 0 0 12px rgba(139, 92, 246, .08); }
+:root[data-theme="light"] .theme-toggle::before { border-color: rgba(217, 70, 239, .18); }
+
+/* ── Stars ── */
+:root[data-theme="light"] .star { background: rgba(139, 92, 246, .5); box-shadow: 0 0 4px 1px rgba(139, 92, 246, .3); }
+:root[data-theme="light"] .star-bright { background: #a855f7; box-shadow: 0 0 5px 1px rgba(168, 85, 247, .5), 0 0 12px 3px rgba(217, 70, 239, .2); }
+
+/* ── Constellations & orbital paths ── */
+:root[data-theme="light"] .constellation { background: linear-gradient(90deg, rgba(139, 92, 246, 0), rgba(139, 92, 246, .35), rgba(217, 70, 239, .1)) !important; box-shadow: 0 0 6px rgba(139, 92, 246, .18); }
+:root[data-theme="light"] .orbital-path { border-color: rgba(139, 92, 246, .10) !important; }
+:root[data-theme="light"] .orbital-path-two { border-color: rgba(217, 70, 239, .12) !important; }
+
+/* ── App shell orbital ring ── */
+:root[data-theme="light"] .app-shell::before { border-color: rgba(139, 92, 246, .15); box-shadow: 0 0 0 3.5rem rgba(139, 92, 246, .02), 0 0 0 8rem rgba(217, 70, 239, .015), inset 0 0 8rem rgba(139, 92, 246, .04); }
+:root[data-theme="light"] .app-shell::after { background: radial-gradient(circle, rgba(16, 185, 129, .08), transparent 68%); }
+
+/* ── Page texture — lavender dot-grid + radial washes (BOOSTED) ── */
+:root[data-theme="light"] .page-texture { background-image: radial-gradient(ellipse 65rem 32rem at 50% -16rem, rgba(139, 92, 246, .16), transparent 70%), radial-gradient(circle at 91% 15%, rgba(217, 70, 239, .12), transparent 19rem), radial-gradient(circle at 2% 62%, rgba(16, 185, 129, .09), transparent 24rem), linear-gradient(115deg, rgba(139, 92, 246, .05) 1px, transparent 1px), linear-gradient(25deg, rgba(139, 92, 246, .04) 1px, transparent 1px), radial-gradient(rgba(139, 92, 246, .13) .65px, transparent .75px) !important; }
+
+/* ── Market grid grid-line overlay ── */
+:root[data-theme="light"] .market-grid::before { background-image: linear-gradient(rgba(139, 92, 246, .04) 1px, transparent 1px), linear-gradient(90deg, rgba(139, 92, 246, .04) 1px, transparent 1px) !important; opacity: 1 !important; }
+:root[data-theme="light"] .market-grid::after { color: rgba(139, 92, 246, .45); }
+
+/* ── Cards — edge glows, corner brackets, colored shadows (BOOSTED) ── */
+:root[data-theme="light"] main [class*="bg-navy-800"],
+:root[data-theme="light"] .market-card {
+  background-color: rgba(var(--card-rgb), .78) !important;
+  background-image: linear-gradient(135deg, rgba(255, 255, 255, .6), transparent 30%), linear-gradient(90deg, rgba(139, 92, 246, .06), transparent 22%, transparent 79%, rgba(217, 70, 239, .06)) !important;
+  border-color: rgba(139, 92, 246, .25) !important;
+  box-shadow: 0 8px 32px rgba(139, 92, 246, .10), 0 2px 8px rgba(139, 92, 246, .06), inset 0 1px 0 rgba(255, 255, 255, .7), inset 0 -1px 0 rgba(139, 92, 246, .08) !important;
+}
+:root[data-theme="light"] main [class*="bg-navy-800"]::before,
+:root[data-theme="light"] .market-card::before {
+  background: linear-gradient(90deg, rgba(139, 92, 246, .65), rgba(139, 92, 246, 0)) 16px 0 / 92px 1px no-repeat, linear-gradient(90deg, rgba(217, 70, 239, 0), rgba(217, 70, 239, .55)) calc(100% - 16px) 100% / 84px 1px no-repeat, linear-gradient(180deg, rgba(139, 92, 246, .45), transparent) 0 14px / 1px 64px no-repeat, linear-gradient(0deg, rgba(217, 70, 239, .38), transparent) 100% calc(100% - 14px) / 1px 64px no-repeat !important;
+}
+:root[data-theme="light"] main [class*="bg-navy-800"]::after,
+:root[data-theme="light"] .market-card::after {
+  border-top-color: rgba(139, 92, 246, .55) !important;
+  border-right-color: rgba(139, 92, 246, .55) !important;
+  box-shadow: -6px 6px 0 -5px rgba(217, 70, 239, .6) !important;
+}
+
+/* ── Card hover ── */
+:root[data-theme="light"] .market-card:hover {
+  border-color: rgba(139, 92, 246, .55) !important;
+  box-shadow: 0 16px 48px rgba(139, 92, 246, .14), 0 4px 12px rgba(139, 92, 246, .08), 0 0 0 1px rgba(139, 92, 246, .10), inset 0 1px 0 rgba(255, 255, 255, .75) !important;
+}
+
+/* ── Stat card accent bars (BOOSTED) ── */
+:root[data-theme="light"] .stat-card::before { background-image: linear-gradient(90deg, rgba(139, 92, 246, .7), transparent 42%), linear-gradient(180deg, rgba(139, 92, 246, .4), transparent), repeating-linear-gradient(90deg, rgba(139, 92, 246, .10) 0 1px, transparent 1px 9px) !important; }
+:root[data-theme="light"] .stat-card:nth-child(2n)::before { background-image: linear-gradient(90deg, rgba(16, 185, 129, .7), transparent 42%), linear-gradient(180deg, rgba(16, 185, 129, .4), transparent), repeating-linear-gradient(90deg, rgba(16, 185, 129, .10) 0 1px, transparent 1px 9px) !important; }
+:root[data-theme="light"] .stat-card:nth-child(3n)::before { background-image: linear-gradient(90deg, rgba(217, 70, 239, .7), transparent 42%), linear-gradient(180deg, rgba(217, 70, 239, .4), transparent), repeating-linear-gradient(90deg, rgba(217, 70, 239, .10) 0 1px, transparent 1px 9px) !important; }
+:root[data-theme="light"] .stat-card p:first-child::before { background: rgb(139, 92, 246); box-shadow: 0 0 9px rgba(139, 92, 246, .65); }
+
+/* ── Chart terminal ── */
+:root[data-theme="light"] .chart-terminal .recharts-text { fill: rgba(88, 28, 135, .7) !important; }
+:root[data-theme="light"] .chart-terminal .recharts-cartesian-grid line { stroke: rgba(139, 92, 246, .18) !important; }
+:root[data-theme="light"] .chart-terminal .recharts-wrapper { filter: drop-shadow(0 4px 8px rgba(139, 92, 246, .08)) !important; }
+:root[data-theme="light"] .chart-terminal::after { background: repeating-linear-gradient(90deg, rgba(139, 92, 246, .55) 0 2px, transparent 2px 8px) !important; }
+:root[data-theme="light"] .chart-terminal::before { background-image: repeating-linear-gradient(0deg, transparent 0 27px, rgba(139, 92, 246, .08) 28px), linear-gradient(90deg, rgba(139, 92, 246, .65), rgba(139, 92, 246, 0)), linear-gradient(90deg, rgba(217, 70, 239, 0), rgba(217, 70, 239, .55)), linear-gradient(180deg, rgba(139, 92, 246, .45), transparent), linear-gradient(0deg, rgba(217, 70, 239, .38), transparent) !important; }
+
+/* ── Assets table ── */
+:root[data-theme="light"] .assets-terminal thead { background: rgba(237, 233, 254, .85) !important; box-shadow: 0 4px 8px rgba(139, 92, 246, .06) !important; }
+:root[data-theme="light"] .assets-terminal tbody tr::before { background: rgba(139, 92, 246, .6) !important; }
+
+/* ── Genome terminal ── */
+:root[data-theme="light"] .genome-terminal { background-image: linear-gradient(180deg, rgba(255, 255, 255, .35), transparent 24%), radial-gradient(circle at 50% 90%, rgba(217, 70, 239, .08), transparent 44%) !important; }
+
+/* ── Table input + hover overrides ── */
+:root[data-theme="light"] .assets-terminal input { background: rgba(237, 233, 254, .6) !important; border-color: rgba(139, 92, 246, .2) !important; color: #2e1065 !important; }
+:root[data-theme="light"] .assets-terminal input:focus { border-color: rgba(139, 92, 246, .5) !important; }
+:root[data-theme="light"] .assets-terminal th:hover { color: rgb(139, 92, 246) !important; }
+:root[data-theme="light"] .assets-terminal tr:hover { background: rgba(139, 92, 246, .04) !important; }
+
+/* ── Loading spinner ── */
+:root[data-theme="light"] [class*="border-t-cyan"] { border-top-color: rgb(139, 92, 246) !important; }
+:root[data-theme="light"] [class*="border-cyan"] { border-color: rgba(139, 92, 246, .15) !important; border-top-color: rgb(139, 92, 246) !important; }
+
+/* ── Recharts line/area strokes (SVG overrides) ── */
+:root[data-theme="light"] .recharts-area-area { fill: url(#price-area) !important; }
+:root[data-theme="light"] .recharts-line-curve[stroke="#00D4FF"],
+:root[data-theme="light"] .recharts-area-curve[stroke="#00D4FF"] { stroke: #8B5CF6 !important; }
+:root[data-theme="light"] .recharts-active-dot circle[fill="#00D4FF"] { fill: #8B5CF6 !important; }
+:root[data-theme="light"] .recharts-tooltip-cursor[stroke="#00D4FF"] { stroke: #8B5CF6 !important; }
+
+/* ── Selection color ── */
+:root[data-theme="light"] ::selection { color: #faf5ff; background: rgb(139, 92, 246); }
 @keyframes orbital-drift { from { transform: translate3d(0, 0, 0) rotate(-8deg); } to { transform: translate3d(-2rem, 2rem, 0) rotate(13deg); } }
 @keyframes star-pulse { 0%, 100% { opacity: .26; transform: scale(.75); } 48% { opacity: 1; transform: scale(1.35); } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; } }
