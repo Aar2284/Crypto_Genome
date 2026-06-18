@@ -319,4 +319,5 @@ backend/check_db.py
 # =====================
 crypto-genome-frontend/dist/
 crypto-genome-frontend/.env.local
-crypto-genome-frontend/.env.*.local
+crypto-genome-frontend/.env.*.local
+FRONTEND_UPGRADE_PLAN.md
