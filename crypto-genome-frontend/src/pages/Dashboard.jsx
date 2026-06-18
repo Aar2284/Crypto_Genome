@@ -60,7 +60,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
         {/* BTC Price Chart */}
-        <div className="rounded-xl bg-navy-800/80 backdrop-blur-sm border border-white/5 p-4 md:p-5 shadow-xl shadow-black/20 flex flex-col h-[420px]">
+        <div className="market-card chart-terminal rounded-xl bg-navy-800/80 backdrop-blur-sm border border-white/5 p-4 md:p-5 shadow-xl shadow-black/20 flex flex-col h-[420px]">
           <div className="flex items-center justify-between mb-4 shrink-0">
             <h2 className="text-base font-display text-white font-bold tracking-wide">BTC/USD PRICE ACTION</h2>
             <div className="px-2 py-1 rounded bg-navy-900 border border-white/10 text-[10px] font-mono text-slate-400">24H</div>
@@ -74,7 +74,7 @@ export default function Dashboard() {
         </div>
 
         {/* Live Assets Table — fixed height, independently scrollable */}
-        <div className="rounded-xl bg-navy-800/80 backdrop-blur-sm border border-white/5 p-4 md:p-5 shadow-xl shadow-black/20 flex flex-col h-[420px]">
+        <div className="market-card assets-terminal rounded-xl bg-navy-800/80 backdrop-blur-sm border border-white/5 p-4 md:p-5 shadow-xl shadow-black/20 flex flex-col h-[420px]">
           <div className="flex items-center justify-between mb-3 shrink-0">
             <h2 className="text-base font-display text-white font-bold tracking-wide">LIVE PIPELINE ASSETS</h2>
             <span className="text-[10px] font-mono text-slate-500 border border-white/5 px-2 py-0.5 rounded">
@@ -89,7 +89,7 @@ export default function Dashboard() {
       </div>
 
       {/* ── Row 3: Genome Space — 3D behavioral scatter plot ── */}
-      <div className="rounded-xl bg-navy-800/80 backdrop-blur-sm border border-white/5 shadow-xl shadow-black/20 overflow-hidden" style={{ height: "580px" }}>
+      <div className="market-card genome-terminal rounded-xl bg-navy-800/80 backdrop-blur-sm border border-white/5 shadow-xl shadow-black/20 overflow-hidden" style={{ height: "580px" }}>
         <div className="px-4 pt-3 pb-0 flex items-center justify-between">
           <div>
             <h2 className="text-base font-display text-white font-bold tracking-wide">GENOME SPACE</h2>
