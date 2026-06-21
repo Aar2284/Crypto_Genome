@@ -4,6 +4,18 @@ import { OrbitControls, Stars, Html, Line } from "@react-three/drei"
 import { motion, AnimatePresence } from "framer-motion"
 import * as THREE from "three"
 import useCryptoStore from "../../store/useCryptoStore.js"
+import useThemeColor from "../../hooks/useThemeColor.js"
+
+// Theme-aware palette helper
+function useTheme() {
+  const [isDark, setIsDark] = useState(() => document.documentElement.getAttribute("data-theme") !== "light")
+  useEffect(() => {
+    const obs = new MutationObserver(() => setIsDark(document.documentElement.getAttribute("data-theme") !== "light"))
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] })
+    return () => obs.disconnect()
+  }, [])
+  return isDark
+}
 
 // ── Cluster color palette (matches implementation plan) ────────────────────────
 const CLUSTER_COLORS = {
@@ -343,7 +355,7 @@ function OrbitalRing({ coins, cfgIdx, selectedSymbol, hoveredSymbol, onSelect, o
 }
 
 // ── Scrolling price ticker ─────────────────────────────────────────────────────
-function PriceTicker({ coins }) {
+function PriceTicker({ coins, isDark }) {
   const items = useMemo(() =>
     [...coins, ...coins].map((c, i) => ({
       ...c,
@@ -352,9 +364,14 @@ function PriceTicker({ coins }) {
     [coins]
   )
 
+  const bg = isDark
+    ? "linear-gradient(90deg, rgba(1,10,24,0.98) 0%, rgba(1,10,24,0.7) 8%, rgba(1,10,24,0.7) 92%, rgba(1,10,24,0.98) 100%)"
+    : "linear-gradient(90deg, rgba(248,245,255,0.98) 0%, rgba(242,235,255,0.82) 8%, rgba(242,235,255,0.82) 92%, rgba(248,245,255,0.98) 100%)"
+  const textMuted = isDark ? "rgba(200,215,235,0.75)" : "rgba(80,40,120,0.75)"
+
   return (
     <div className="absolute top-0 left-0 right-0 z-20 h-7 overflow-hidden flex items-center"
-      style={{ background: "linear-gradient(90deg, rgba(1,10,24,0.98) 0%, rgba(1,10,24,0.7) 8%, rgba(1,10,24,0.7) 92%, rgba(1,10,24,0.98) 100%)" }}>
+      style={{ background: bg }}>
       <style>{`@keyframes tickerScroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}`}</style>
       <div style={{ display: "flex", gap: "28px", animation: "tickerScroll 55s linear infinite", whiteSpace: "nowrap", willChange: "transform" }}>
         {items.map(c => {
@@ -363,7 +380,7 @@ function PriceTicker({ coins }) {
           return (
             <span key={c.key} style={{ fontFamily: "JetBrains Mono", fontSize: "10px", display: "inline-flex", alignItems: "center", gap: "5px", flexShrink: 0 }}>
               <span style={{ color, fontWeight: 700 }}>{c.symbol}</span>
-              <span style={{ color: "rgba(200,215,235,0.75)" }}>{price}</span>
+              <span style={{ color: textMuted }}>{price}</span>
               <span style={{ color, fontWeight: 600 }}>{c.change_24h_pct >= 0 ? "▲" : "▼"}{Math.abs(c.change_24h_pct ?? 0).toFixed(1)}%</span>
             </span>
           )
@@ -374,7 +391,7 @@ function PriceTicker({ coins }) {
 }
 
 // ── Detail panel ───────────────────────────────────────────────────────────────
-function GenomePanel({ coin, cfgIdx, onClose }) {
+function GenomePanel({ coin, cfgIdx, onClose, isDark }) {
   if (!coin) return null
   const change = coin.change_24h_pct ?? 0
   const color = getColor(change)
@@ -392,6 +409,23 @@ function GenomePanel({ coin, cfgIdx, onClose }) {
 
   const clusterColor = getClusterColor(coin.cluster_label)
 
+  // Theme-aware panel colors
+  const panelBg = isDark ? "#010b1b" : "rgba(255,253,255,0.97)"
+  const panelBorder = isDark ? `${color}55` : `${color}40`
+  const panelShadow = isDark
+    ? `0 28px 72px rgba(0,0,0,0.99), 0 0 40px ${color}15, inset 0 1px 0 rgba(255,255,255,0.04)`
+    : `0 28px 72px rgba(80,40,120,0.22), 0 0 40px ${color}15, inset 0 1px 0 rgba(255,255,255,0.7)`
+  const titleColor = isDark ? "white" : "#32145f"
+  const statsBoxBg = isDark ? "rgba(255,255,255,0.03)" : "rgba(139,92,246,0.06)"
+  const statsBoxBorder = isDark ? "rgba(255,255,255,0.07)" : "rgba(139,92,246,0.15)"
+  const barTrackBg = isDark ? "rgba(255,255,255,0.07)" : "rgba(139,92,246,0.12)"
+  const labelMuted = isDark ? "#64748b" : "#8c6bb8"
+  const labelDim = isDark ? "text-slate-600" : "text-purple-400"
+  const tipColor = isDark ? "#475569" : "#a78bdb"
+  const closeHoverBg = isDark ? "rgba(255,255,255,0.05)" : "rgba(139,92,246,0.08)"
+  const closeBorder = isDark ? "rgba(255,255,255,0.09)" : "rgba(139,92,246,0.18)"
+  const footBorder = isDark ? "rgba(255,255,255,0.05)" : "rgba(139,92,246,0.1)"
+  const footColor = isDark ? "#475569" : "#a78bdb"
   // Mini orbit ring diagram
   const RingDiagram = () => (
     <svg width="64" height="64" viewBox="-32 -32 64 64" style={{ flexShrink: 0 }}>
@@ -417,21 +451,21 @@ function GenomePanel({ coin, cfgIdx, onClose }) {
       exit={{ opacity: 0, x: 16, scale: 0.93 }}
       transition={{ duration: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
       className="absolute top-10 right-4 z-30 w-62 max-h-[88%] overflow-y-auto scrollbar-hide"
-      style={{ width: 248, background: "#010b1b", border: `1.5px solid ${color}55`, borderRadius: "18px", boxShadow: `0 28px 72px rgba(0,0,0,0.99), 0 0 40px ${color}15, inset 0 1px 0 rgba(255,255,255,0.04)` }}
+      style={{ width: 248, background: panelBg, border: `1.5px solid ${panelBorder}`, borderRadius: "18px", boxShadow: panelShadow }}
     >
       <div className="p-4">
         {/* Header */}
         <div className="flex justify-between items-start mb-3">
           <div className="flex-1">
-            <div className="font-display font-extrabold text-white text-lg leading-none">{coin.name}</div>
+            <div className="font-display font-extrabold text-lg leading-none" style={{ color: titleColor }}>{coin.name}</div>
             <div className="font-mono text-[9px] mt-1.5 flex items-center gap-2" style={{ color }}>
               <span className="w-2 h-2 rounded-full animate-pulse inline-block" style={{ background: color, boxShadow: `0 0 7px ${color}` }} />
               {coin.symbol} · Cryptocurrency
             </div>
           </div>
           <button onClick={onClose}
-            className="w-7 h-7 rounded-full flex items-center justify-center text-slate-500 hover:text-white text-xs transition-all hover:scale-110"
-            style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.09)" }}>
+            className="w-7 h-7 rounded-full flex items-center justify-center text-xs transition-all hover:scale-110"
+            style={{ background: closeHoverBg, border: `1px solid ${closeBorder}`, color: isDark ? "#64748b" : "#8c6bb8" }}>
             ✕
           </button>
         </div>
@@ -446,19 +480,19 @@ function GenomePanel({ coin, cfgIdx, onClose }) {
         )}
 
         {/* Price */}
-        <div className="font-display font-extrabold text-white tabular-nums leading-none" style={{ fontSize: "22px" }}>{price}</div>
+        <div className="font-display font-extrabold tabular-nums leading-none" style={{ fontSize: "22px", color: titleColor }}>{price}</div>
         <div className="inline-flex items-center gap-1.5 font-mono text-[11px] px-2.5 py-1 rounded-full mt-2 mb-3"
           style={{ background: `${color}18`, border: `1px solid ${color}40`, color }}>
           {isUp ? "▲" : "▼"} {Math.abs(change).toFixed(2)}% past 24 hours
         </div>
 
         {/* Orbit ring diagram + tier */}
-        <div className="flex items-center gap-3 mb-4 p-2.5 rounded-xl" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
+        <div className="flex items-center gap-3 mb-4 p-2.5 rounded-xl" style={{ background: statsBoxBg, border: `1px solid ${statsBoxBorder}` }}>
           <RingDiagram />
           <div>
-            <div className="font-mono text-[8px] text-slate-600 uppercase tracking-widest">Market Orbit</div>
+            <div className="font-mono text-[8px] uppercase tracking-widest" style={{ color: labelMuted }}>Market Orbit</div>
             <div className="font-mono text-[11px] font-bold mt-0.5" style={{ color: cfg.ringColor }}>{cfg.tier}</div>
-            <div className="font-mono text-[8px] text-slate-600 mt-1">Inner ring = largest market cap</div>
+            <div className="font-mono text-[8px] mt-1" style={{ color: labelMuted }}>Inner ring = largest market cap</div>
           </div>
         </div>
 
@@ -472,14 +506,14 @@ function GenomePanel({ coin, cfgIdx, onClose }) {
           ].map(({ label, val, tip }) => (
             <div key={label}>
               <div className="flex justify-between font-mono text-[8px] mb-1">
-                <span className="text-slate-400">{label}</span>
+                <span style={{ color: isDark ? "#94a3b8" : "#7656a7" }}>{label}</span>
                 <span className="font-bold" style={{ color }}>{(val * 100).toFixed(0)}%</span>
               </div>
-              <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.07)" }}>
+              <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: barTrackBg }}>
                 <motion.div className="h-full rounded-full" style={{ background: `linear-gradient(90deg, ${color}60, ${color})` }}
                   initial={{ width: 0 }} animate={{ width: `${val * 100}%` }} transition={{ duration: 0.5, ease: "easeOut" }} />
               </div>
-              <div className="font-mono text-[7px] text-slate-700 mt-0.5">{tip}</div>
+              <div className="font-mono text-[7px] mt-0.5" style={{ color: tipColor }}>{tip}</div>
             </div>
           ))}
         </div>
@@ -487,15 +521,15 @@ function GenomePanel({ coin, cfgIdx, onClose }) {
         {/* Stats grid */}
         <div className="grid grid-cols-2 gap-2">
           {[{ l: "Market Cap", v: mcap, s: "Total coins × price" }, { l: "24h Volume", v: vol, s: "USD traded today" }].map(({ l, v, s }) => (
-            <div key={l} className="p-2.5 rounded-xl" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
-              <div className="font-mono text-[7px] text-slate-600 uppercase tracking-wide">{l}</div>
-              <div className="font-mono text-sm text-white font-bold mt-0.5">{v}</div>
-              <div className="font-mono text-[7px] text-slate-700 mt-0.5">{s}</div>
+            <div key={l} className="p-2.5 rounded-xl" style={{ background: statsBoxBg, border: `1px solid ${statsBoxBorder}` }}>
+              <div className="font-mono text-[7px] uppercase tracking-wide" style={{ color: labelMuted }}>{l}</div>
+              <div className="font-mono text-sm font-bold mt-0.5" style={{ color: titleColor }}>{v}</div>
+              <div className="font-mono text-[7px] mt-0.5" style={{ color: tipColor }}>{s}</div>
             </div>
           ))}
         </div>
 
-        <div className="mt-3 font-mono text-[7px] text-slate-700 text-center border-t pt-2.5" style={{ borderColor: "rgba(255,255,255,0.05)" }}>
+        <div className="mt-3 font-mono text-[7px] text-center border-t pt-2.5" style={{ borderColor: footBorder, color: footColor }}>
           Click background to close · Scroll to zoom
         </div>
       </div>
@@ -509,6 +543,8 @@ export default function GenomeSpace() {
   const clusterSummary = useCryptoStore((s) => s.clusterSummary)
   const colorMode     = useCryptoStore((s) => s.colorMode)
   const setColorMode  = useCryptoStore((s) => s.setColorMode)
+  const isDark = useTheme()
+  const { accent } = useThemeColor()
 
   const ranked = useMemo(() =>
     [...(cryptoData ?? [])].sort((a, b) => (b.market_cap ?? 0) - (a.market_cap ?? 0)),
@@ -544,21 +580,21 @@ export default function GenomeSpace() {
     <div className="w-full h-full relative select-none overflow-hidden">
 
       {/* Scrolling ticker */}
-      <PriceTicker coins={ranked.slice(0, 40)} />
+      <PriceTicker coins={ranked.slice(0, 40)} isDark={isDark} />
 
       {/* Color mode toggle */}
       <div className="absolute top-10 right-4 z-20 flex items-center gap-1 p-1 rounded-xl"
-        style={{ background: "rgba(1,11,27,0.92)", border: "1px solid rgba(255,255,255,0.09)" }}>
-        <span className="font-mono text-[7.5px] text-slate-500 px-1.5 uppercase tracking-widest">Color by</span>
+        style={{ background: isDark ? "rgba(1,11,27,0.92)" : "rgba(255,253,255,0.94)", border: isDark ? "1px solid rgba(255,255,255,0.09)" : "1px solid rgba(139,92,246,0.2)" }}>
+        <span className="font-mono text-[7.5px] px-1.5 uppercase tracking-widest" style={{ color: isDark ? "#64748b" : "#8c6bb8" }}>Color by</span>
         {["change", "cluster"].map(mode => (
           <button key={mode}
             id={`color-mode-${mode}`}
             onClick={() => setColorMode(mode)}
             className="font-mono text-[8.5px] px-2.5 py-1 rounded-lg transition-all"
             style={{
-              background: colorMode === mode ? "rgba(0,229,255,0.12)" : "transparent",
-              color: colorMode === mode ? "#00E5FF" : "#64748b",
-              border: colorMode === mode ? "1px solid rgba(0,229,255,0.35)" : "1px solid transparent",
+              background: colorMode === mode ? (isDark ? "rgba(0,229,255,0.12)" : "rgba(139,92,246,0.12)") : "transparent",
+              color: colorMode === mode ? (isDark ? "#00E5FF" : "#7c3aed") : (isDark ? "#64748b" : "#8c6bb8"),
+              border: colorMode === mode ? (isDark ? "1px solid rgba(0,229,255,0.35)" : "1px solid rgba(139,92,246,0.4)") : "1px solid transparent",
               fontWeight: colorMode === mode ? 700 : 400,
             }}>
             {mode === "change" ? "24h Change" : "Cluster"}
@@ -609,26 +645,26 @@ export default function GenomeSpace() {
 
       {/* Description */}
       <div className="absolute top-12 left-4 z-10 pointer-events-none">
-        <p className="text-[8.5px] font-mono text-slate-500 leading-relaxed">
-          <span className="font-bold" style={{ color: "#00E5FF" }}>MARKET ORBITS</span>
+        <p className="text-[8.5px] font-mono leading-relaxed" style={{ color: isDark ? "#64748b" : "#8c6bb8" }}>
+          <span className="font-bold" style={{ color: isDark ? "#00E5FF" : "#7c3aed" }}>MARKET ORBITS</span>
           {" "}— inner ring = biggest coins · outer = smaller caps
         </p>
       </div>
 
       {/* Legend — switches between change colors and cluster colors */}
       <div className="absolute bottom-12 left-4 z-10 p-2.5 rounded-xl border"
-        style={{ background: "rgba(1,11,27,0.94)", borderColor: "rgba(255,255,255,0.07)" }}>
-        <div className="font-mono text-[7.5px] text-slate-600 uppercase tracking-widest mb-2">Market Cap Tiers</div>
+        style={{ background: isDark ? "rgba(1,11,27,0.94)" : "rgba(255,253,255,0.95)", borderColor: isDark ? "rgba(255,255,255,0.07)" : "rgba(139,92,246,0.18)" }}>
+        <div className="font-mono text-[7.5px] uppercase tracking-widest mb-2" style={{ color: isDark ? "#475569" : "#8c6bb8" }}>Market Cap Tiers</div>
         {ORBIT_CONFIG.map((cfg, i) => (
           <div key={i} className="flex items-center gap-2 mb-1.5 last:mb-0">
             <div className="w-5 shrink-0" style={{ height: "2px", background: cfg.ringColor, boxShadow: `0 0 4px ${cfg.ringColor}` }} />
-            <span className="font-mono text-[8.5px] text-slate-400">{cfg.tier.split(" · ")[1]}</span>
+            <span className="font-mono text-[8.5px]" style={{ color: isDark ? "#94a3b8" : "#7656a7" }}>{cfg.tier.split(" · ")[1]}</span>
           </div>
         ))}
-        <div className="border-t mt-2 pt-2" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+        <div className="border-t mt-2 pt-2" style={{ borderColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(139,92,246,0.12)" }}>
           {colorMode === "change" ? (
             <>
-              <div className="font-mono text-[7.5px] text-slate-600 uppercase tracking-widest mb-1.5">24h Color</div>
+              <div className="font-mono text-[7.5px] uppercase tracking-widest mb-1.5" style={{ color: isDark ? "#475569" : "#8c6bb8" }}>24h Color</div>
               {[
                 { c: "#00FF00", l: "Strong gain >+5%" },
                 { c: "#FFFF00", l: "Mild gain 0–+5%" },
@@ -637,28 +673,28 @@ export default function GenomeSpace() {
               ].map(({ c, l }) => (
                 <div key={l} className="flex items-center gap-2 mb-1 last:mb-0">
                   <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: c, boxShadow: `0 0 5px ${c}` }} />
-                  <span className="font-mono text-[8.5px] text-slate-400">{l}</span>
+                  <span className="font-mono text-[8.5px]" style={{ color: isDark ? "#94a3b8" : "#7656a7" }}>{l}</span>
                 </div>
               ))}
             </>
           ) : (
             <>
-              <div className="font-mono text-[7.5px] text-slate-600 uppercase tracking-widest mb-1.5">Cluster Color</div>
+              <div className="font-mono text-[7.5px] uppercase tracking-widest mb-1.5" style={{ color: isDark ? "#475569" : "#8c6bb8" }}>Cluster Color</div>
               {clusterSummary.length > 0
                 ? clusterSummary.map(cl => (
                     <div key={cl.cluster_id} className="flex items-center gap-2 mb-1 last:mb-0">
                       <span className="w-2.5 h-2.5 rounded-full shrink-0"
                         style={{ background: getClusterColor(cl.cluster_label), boxShadow: `0 0 5px ${getClusterColor(cl.cluster_label)}` }} />
-                      <span className="font-mono text-[8.5px] text-slate-400">
+                      <span className="font-mono text-[8.5px]" style={{ color: isDark ? "#94a3b8" : "#7656a7" }}>
                         {cl.cluster_label ?? `Cluster ${cl.cluster_id}`}
-                        <span className="text-slate-600"> ({cl.count})</span>
+                        <span style={{ color: isDark ? "#475569" : "#a78bdb" }}> ({cl.count})</span>
                       </span>
                     </div>
                   ))
                 : Object.entries(CLUSTER_COLORS).map(([label, color]) => (
                     <div key={label} className="flex items-center gap-2 mb-1 last:mb-0">
                       <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: color, boxShadow: `0 0 5px ${color}` }} />
-                      <span className="font-mono text-[8.5px] text-slate-400">{label}</span>
+                      <span className="font-mono text-[8.5px]" style={{ color: isDark ? "#94a3b8" : "#7656a7" }}>{label}</span>
                     </div>
                   ))
               }
@@ -675,6 +711,7 @@ export default function GenomeSpace() {
             coin={selected}
             cfgIdx={ringOf(selected.symbol)}
             onClose={handleDeselect}
+            isDark={isDark}
           />
         )}
       </AnimatePresence>
@@ -684,8 +721,8 @@ export default function GenomeSpace() {
         {!selected && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
-            <div className="font-mono text-[8.5px] text-slate-500 whitespace-nowrap px-3 py-1.5 rounded-full border"
-              style={{ background: "rgba(1,11,27,0.88)", borderColor: "rgba(255,255,255,0.07)" }}>
+            <div className="font-mono text-[8.5px] whitespace-nowrap px-3 py-1.5 rounded-full border"
+              style={{ background: isDark ? "rgba(1,11,27,0.88)" : "rgba(255,253,255,0.92)", borderColor: isDark ? "rgba(255,255,255,0.07)" : "rgba(139,92,246,0.18)", color: isDark ? "#64748b" : "#8c6bb8" }}>
               🖱 Scroll to zoom · Drag to tilt · Hover to highlight · Click to inspect
             </div>
           </motion.div>
