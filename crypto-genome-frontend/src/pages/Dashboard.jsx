@@ -8,6 +8,7 @@ import CryptoTable from "../components/ui/CryptoTable.jsx"
 import LoadingSpinner from "../components/ui/LoadingSpinner.jsx"
 import useCryptoStore from "../store/useCryptoStore.js"
 import GenomeSpace from "../components/3d/GenomeSpace.jsx"
+import useThemeColor from "../hooks/useThemeColor.js"
 
 export default function Dashboard() {
   const { cryptoData, metrics, btcHistory, loading, wsStatus, wsLatency } = useCryptoStore()
@@ -16,6 +17,7 @@ export default function Dashboard() {
   const btcChange = btcAsset?.change_24h_pct ?? 0
   const globalVolume = cryptoData?.reduce((sum, asset) => sum + (asset.volume_24h || 0), 0) || 0
   const isLive = wsStatus === "connected"
+  const { accent } = useThemeColor()
 
   return (
     <div className="dashboard-shell space-y-6 md:space-y-8 max-w-[1600px] mx-auto pb-12 px-4 md:px-0">
@@ -33,12 +35,18 @@ export default function Dashboard() {
         {loading && !metrics && <div className="absolute inset-0 z-10 bg-navy-900/50 backdrop-blur-sm flex items-center justify-center rounded-xl"><LoadingSpinner size={32} /></div>}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
           <StatCard title="Bitcoin Price" value={btcPrice ? formatCurrency(btcPrice) : "—"} change={`${btcChange >= 0 ? "+" : ""}${btcChange.toFixed(2)}% · 24H`} changeType={btcChange >= 0 ? "up" : "down"} icon={Zap} accentColor="#FBBF24" delay={0.05} />
-          <StatCard title="Market Volume" value={`$${formatCompactNumber(globalVolume)}`} change="Aggregate liquidity" changeType="neutral" icon={Activity} accentColor="#38BDF8" delay={0.1} />
+          <StatCard title="Market Volume" value={`$${formatCompactNumber(globalVolume)}`} change="Aggregate liquidity" changeType="neutral" icon={Activity} accentColor={accent} delay={0.1} />
           <StatCard title="Active Streams" value={metrics?.active_streams?.toLocaleString() ?? "—"} change={isLive ? "Stream synchronized" : "Replay mode"} changeType={isLive ? "up" : "neutral"} icon={Database} accentColor="#34D399" delay={0.15} />
           <StatCard title="API Latency" value={metrics?.total_latency_ms ? `${metrics.total_latency_ms}ms` : "—"} change={metrics?.system_health || "Health checking"} changeType="up" icon={Cpu} accentColor="#818CF8" delay={0.2} />
         </div>
       </section>
 
+      <section className="regime-ribbon" aria-label="Market regime summary">
+        <div className="regime-intro"><span>MARKET REGIME / LIVE</span><strong>Liquidity is <em>{btcChange >= 0 ? "risk-on" : "defensive"}</em></strong></div>
+        <div className="regime-meter"><span>Momentum</span><div><i style={{ width: `${Math.min(92, 48 + Math.abs(btcChange) * 6)}%` }} /></div><b>{Math.abs(btcChange).toFixed(1)}%</b></div>
+        <div className="regime-meter"><span>Feed health</span><div><i style={{ width: isLive ? "88%" : "42%" }} /></div><b>{isLive ? "NOMINAL" : "REPLAY"}</b></div>
+        <div className="regime-pulse" aria-hidden="true">{Array.from({ length: 22 }, (_, index) => <i key={index} style={{ "--bar": `${18 + ((index * 17) % 72)}%` }} />)}</div>
+      </section>
       <section className="dashboard-grid grid grid-cols-1 xl:grid-cols-[1.18fr_.82fr] gap-6">
         <div className="market-card chart-terminal rounded-2xl bg-navy-800/80 backdrop-blur-sm border border-white/5 p-4 md:p-5 shadow-xl shadow-black/20 flex flex-col h-[456px]">
           <div className="instrument-header">
@@ -46,7 +54,7 @@ export default function Dashboard() {
             <div className="instrument-quote"><span>{btcPrice ? formatCurrency(btcPrice) : "—"}</span><em className={btcChange >= 0 ? "quote-positive" : "quote-negative"}>{btcChange >= 0 ? "▲" : "▼"} {Math.abs(btcChange).toFixed(2)}%</em></div>
           </div>
           <div className="chart-controls"><span className="active">24H</span><span>7D</span><span>30D</span><span>90D</span><i>LIVE FEED</i></div>
-          <div className="flex-1 min-h-0 pt-2">{loading && (!btcHistory || btcHistory.length === 0) ? <LoadingSpinner size={40} /> : <PriceLineChart data={btcHistory} color="#38BDF8" height="100%" />}</div>
+          <div className="flex-1 min-h-0 pt-2">{loading && (!btcHistory || btcHistory.length === 0) ? <LoadingSpinner size={40} /> : <PriceLineChart data={btcHistory} height="100%" />}</div>
         </div>
 
         <div className="market-card assets-terminal rounded-2xl bg-navy-800/80 backdrop-blur-sm border border-white/5 p-4 md:p-5 shadow-xl shadow-black/20 flex flex-col h-[456px]">
