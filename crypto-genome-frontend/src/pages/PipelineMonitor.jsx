@@ -1,180 +1,32 @@
 import { useMemo } from "react"
 import { motion } from "framer-motion"
-import { GitBranch, Database, RefreshCw, Activity, Server, Zap, Clock, ArrowRight } from "lucide-react"
+import { Activity, ArrowRight, Database, GitBranch, Radio, RefreshCw, Server, ShieldCheck, Zap } from "lucide-react"
 import PipelineStatus from "../components/ui/PipelineStatus.jsx"
 import useCryptoStore from "../store/useCryptoStore.js"
 import { mockAssets } from "../utils/mockData.js"
-import { formatCompactNumber } from "../utils/formatters.js"
 
-const cardClass = "rounded-2xl border border-white/5 bg-navy-800/60 backdrop-blur-sm p-5 shadow-xl shadow-black/20"
-
-// Simulated log entries — in production these would come from the backend
-const STREAM_LOGS = [
-  { time: "now",    type: "ok",   msg: "Processed 420 OHLCV candles (BTC/USD)" },
-  { time: "-2s",    type: "ok",   msg: "Processed 381 OHLCV candles (ETH/USD)" },
-  { time: "-5s",    type: "info", msg: "Genome recalculation triggered (3 assets)" },
-  { time: "-8s",    type: "ok",   msg: "Updated 3 genome dimension vectors" },
-  { time: "-12s",   type: "ok",   msg: "Market cap rankings synced (10 assets)" },
-  { time: "-18s",   type: "warn", msg: "SOL WebSocket latency spike: 342ms" },
-  { time: "-22s",   type: "ok",   msg: "Kafka consumer lag: 0 messages" },
-  { time: "-30s",   type: "info", msg: "Airflow DAG 'genome_compute' completed OK" },
-  { time: "-45s",   type: "ok",   msg: "PostgreSQL checkpoint completed (85ms)" },
-  { time: "-60s",   type: "info", msg: "Health check passed — all systems nominal" },
+const streamLogs = [
+  ["NOW", "OK", "BTC/USD candle batch committed"], ["-02S", "OK", "ETH/USD stream synchronized"], ["-05S", "INFO", "Genome recalculation queued"], ["-08S", "OK", "Dimension vectors persisted"], ["-18S", "WARN", "SOL latency threshold observed"], ["-30S", "INFO", "Airflow DAG healthy"],
 ]
-
-// Pipeline stage definitions
-const PIPELINE_STAGES = [
-  { id: "ingest",    label: "Ingest",    icon: Zap,       detail: "CoinGecko / Exchange APIs" },
-  { id: "stream",    label: "Stream",    icon: RefreshCw, detail: "Kafka → Airflow DAG" },
-  { id: "compute",   label: "Compute",   icon: Activity,  detail: "Genome dimension calc" },
-  { id: "store",     label: "Store",     icon: Database,  detail: "PostgreSQL / TimescaleDB" },
-  { id: "serve",     label: "Serve",     icon: Server,    detail: "FastAPI + WebSocket" },
+const stages = [
+  ["01", "Ingest", "Exchange adapters", Zap], ["02", "Stream", "Kafka transit", RefreshCw], ["03", "Compute", "Genome engine", Activity], ["04", "Store", "PostgreSQL", Database], ["05", "Serve", "API + sockets", Server],
 ]
 
 export default function PipelineMonitor() {
-  const metrics   = useCryptoStore((s) => s.metrics)
-  const wsStatus  = useCryptoStore((s) => s.wsStatus)
-  const cryptoData = useCryptoStore((s) => s.cryptoData)
-  const isLive    = wsStatus === "connected"
+  const metrics = useCryptoStore((state) => state.metrics) || {}
+  const wsStatus = useCryptoStore((state) => state.wsStatus)
+  const cryptoData = useCryptoStore((state) => state.cryptoData)
+  const isLive = wsStatus === "connected"
+  const recentAssets = useMemo(() => (cryptoData || mockAssets).slice(0, 7), [cryptoData])
+  const statCells = [["Events / sec", metrics.events_per_second ?? 4230, "cyan"], ["Active streams", metrics.active_streams ?? 15, "green"], ["Transit latency", `${metrics.total_latency_ms ?? 45}ms`, "violet"], ["Assets in scope", cryptoData.length, "gold"]]
 
-  const m = metrics || {}
+  return <div className="noc-page space-y-6 max-w-[1600px] mx-auto pb-12 px-4 md:px-0">
+    <section className="noc-hero"><div><div className="noc-kicker"><Radio size={13} /> Operations control room</div><h1>PIPELINE<br /><span>NOC CONSOLE</span></h1><p>Observe live market ingestion from exchange feed to behavioral intelligence.</p></div><div className="noc-health"><ShieldCheck size={28} /><div><span>Network posture</span><strong>{isLive ? "ALL SYSTEMS NOMINAL" : "REPLAY MONITORING"}</strong></div><i className={isLive ? "online" : "idle"} /></div></section>
 
-  // Recent assets sorted by last updated
-  const recentAssets = useMemo(() =>
-    (cryptoData || mockAssets).slice(0, 6), [cryptoData])
+    <section className="noc-services"><div className="section-kicker"><span>01</span> Service mesh <i /></div><PipelineStatus metrics={metrics} isConnected={isLive} /></section>
 
-  return (
-    <div className="space-y-6 max-w-[1600px] mx-auto pb-12 px-4 md:px-0">
-      {/* Header */}
-      <div className="mt-2 md:mt-4">
-        <h1 className="text-2xl md:text-3xl font-display font-bold text-white tracking-wide flex items-center gap-3">
-          <GitBranch className="text-accent" size={28} />
-          PIPELINE MONITOR
-        </h1>
-        <p className="text-slate-400 font-mono text-xs mt-1">
-          Real-time data ingestion and genome computation status
-        </p>
-      </div>
+    <section className="market-card flowboard rounded-2xl bg-navy-800/80 p-5"><div className="flowboard-head"><div><span className="panel-code">NOC-01 / EVENT PATH</span><h2><GitBranch size={17} /> Data flow topology</h2></div><span><i /> {isLive ? "Packets are flowing" : "Awaiting upstream feed"}</span></div><div className="flow-stages">{stages.map(([id, label, detail, Icon], index) => <div className="flow-stage-wrap" key={label}><motion.article initial={{ opacity: 0, scale: .9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: index * .08 }} className="flow-stage"><span>{id}</span><div className="flow-icon"><Icon size={20} /></div><strong>{label}</strong><small>{detail}</small><i /></motion.article>{index < stages.length - 1 && <div className="flow-link"><b /><ArrowRight size={14} /></div>}</div>)}</div><div className="flow-foot"><span>EXCHANGE TICKS</span><i /><span>VALIDATED EVENTS</span><i /><span>GENOME SIGNALS</span><i /><span>CLIENT DELIVERY</span></div></section>
 
-      {/* Service health cards */}
-      <PipelineStatus metrics={m} isConnected={isLive} />
-
-      {/* Pipeline Flow Diagram */}
-      <div className={cardClass}>
-        <h2 className="text-base font-display font-bold text-white mb-6 flex items-center gap-2">
-          <GitBranch size={16} className="text-accent" /> Data Flow Topology
-        </h2>
-        <div className="flex flex-wrap items-center justify-center gap-2 md:gap-0">
-          {PIPELINE_STAGES.map((stage, i) => {
-            const Icon = stage.icon
-            return (
-              <div key={stage.id} className="flex items-center gap-2">
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: i * 0.1 }}
-                  className="flex flex-col items-center gap-2 text-center"
-                >
-                  <div className={`w-14 h-14 rounded-full border-2 flex items-center justify-center
-                    ${isLive
-                      ? "border-accent/60 bg-accent/10 text-accent"
-                      : "border-amber-400/40 bg-amber-400/5 text-amber-400"
-                    }`}
-                  >
-                    <Icon size={20} />
-                  </div>
-                  <div className="text-[11px] font-display font-bold text-white">{stage.label}</div>
-                  <div className="text-[9px] font-mono text-slate-500 max-w-[80px] leading-tight">{stage.detail}</div>
-                </motion.div>
-
-                {i < PIPELINE_STAGES.length - 1 && (
-                  <div className="hidden md:flex items-center mx-2 pb-8">
-                    <div className="w-8 h-0.5 bg-accent/20 relative">
-                      <span className="absolute -right-1 top-1/2 -translate-y-1/2 text-accent/40">
-                        <ArrowRight size={12} />
-                      </span>
-                      {isLive && (
-                        <span className="absolute left-0 top-0 h-full w-2 bg-accent/60 animate-[flow_1.5s_linear_infinite] rounded-full" />
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )
-          })}
-        </div>
-      </div>
-
-      {/* Stats + Logs */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Ingestion Stats */}
-        <div className={`${cardClass} flex flex-col gap-4`}>
-          <h2 className="text-base font-display font-bold text-white flex items-center gap-2">
-            <Zap size={16} className="text-amber-400" /> Ingestion Stats
-          </h2>
-
-          <div className="grid grid-cols-2 gap-3">
-            {[
-              { label: "Active Streams",    value: m.active_streams    ?? 15,     color: "text-cyber" },
-              { label: "Events / Sec",      value: m.events_per_second ?? 4230,   color: "text-accent" },
-              { label: "Latency (ms)",      value: m.total_latency_ms  ?? 45,     color: "text-neon" },
-              { label: "Assets Tracked",    value: recentAssets.length,            color: "text-white" },
-            ].map(({ label, value, color }) => (
-              <div key={label} className="bg-black/20 rounded-xl p-4 border border-white/5">
-                <div className="text-slate-500 text-[10px] font-mono uppercase tracking-wider mb-1">{label}</div>
-                <div className={`text-2xl font-display font-bold ${color}`}>
-                  {typeof value === "number" ? value.toLocaleString() : value}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Recent assets */}
-          <div>
-            <div className="text-slate-500 text-[10px] font-mono uppercase tracking-wider mb-2 flex items-center gap-2">
-              <Clock size={10} /> Recently Processed
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {recentAssets.map((a) => (
-                <span key={a.symbol} className="px-2 py-1 rounded-lg bg-white/5 border border-white/5 text-xs font-mono text-slate-300">
-                  {a.symbol}
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Stream Logs */}
-        <div className={`${cardClass} flex flex-col`}>
-          <h2 className="text-base font-display font-bold text-white flex items-center gap-2 mb-4">
-            <Activity size={16} className="text-cyber" /> Stream Logs
-          </h2>
-          <div className="flex-1 bg-black/40 rounded-xl p-4 border border-white/5 overflow-hidden font-mono text-[11px] space-y-2">
-            <div className="text-slate-600 border-b border-white/5 pb-2 mb-2 flex justify-between">
-              <span>timestamp</span><span>message</span>
-            </div>
-            {STREAM_LOGS.map((log, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, x: -8 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.05 }}
-                className="flex gap-3"
-              >
-                <span className="text-slate-600 shrink-0 w-10">{log.time}</span>
-                <span className={
-                  log.type === "ok"   ? "text-emerald-400" :
-                  log.type === "warn" ? "text-amber-400"   :
-                  "text-cyan-400"
-                }>
-                  [{log.type.toUpperCase().padEnd(4)}]
-                </span>
-                <span className="text-slate-400">{log.msg}</span>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  )
+    <section className="noc-board grid grid-cols-1 xl:grid-cols-[.9fr_1.1fr] gap-6"><article className="market-card noc-stats rounded-2xl bg-navy-800/80 p-5"><div className="lab-panel-head"><div><span className="panel-code">NOC-02 / THROUGHPUT</span><h2><Zap size={17} /> Ingestion telemetry</h2></div><span className="panel-note">LIVE SAMPLE</span></div><div className="noc-stat-grid">{statCells.map(([label, value, tone]) => <div key={label} className={`noc-stat tone-${tone}`}><span>{label}</span><strong>{typeof value === "number" ? value.toLocaleString() : value}</strong><i /></div>)}</div><div className="processed-assets"><span>Recently processed</span><div>{recentAssets.map((asset) => <b key={asset.symbol}>{asset.symbol}</b>)}</div></div></article><article className="market-card stream-terminal rounded-2xl bg-navy-800/80 p-5"><div className="lab-panel-head"><div><span className="panel-code">NOC-03 / STREAM TERMINAL</span><h2><Activity size={17} /> Event console</h2></div><span className="terminal-status"><i /> BUFFER CLEAR</span></div><div className="terminal-window"><div className="terminal-head"><span>TIME</span><span>LEVEL</span><span>MESSAGE</span></div>{streamLogs.map(([time, level, message], index) => <motion.div initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: index * .05 }} className="terminal-row" key={message}><time>{time}</time><b className={level.toLowerCase()}>{level}</b><span>{message}</span></motion.div>)}</div></article></section>
+  </div>
 }
