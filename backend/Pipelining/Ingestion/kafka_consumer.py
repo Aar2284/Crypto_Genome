@@ -19,7 +19,10 @@ import psycopg2
 import time
 from datetime import datetime, timezone
 from kafka import KafkaConsumer
-from kafka.errors import BrokerNotAvailableError
+try:
+    from kafka.errors import NoBrokersAvailable
+except ImportError:
+    from kafka.errors import BrokerNotAvailableError as NoBrokersAvailable
 
 import os
 

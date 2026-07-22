@@ -41,13 +41,15 @@ with DAG(
         export KAFKA_HOST="host.docker.internal:9092"
         export PG_HOST="host.docker.internal"
         
+        cd /opt/airflow/project/Ingestion
+
         echo "Starting Consumer in background..."
-        timeout 30s python /opt/airflow/project/Ingestion/kafka_consumer.py &
+        timeout 30s python kafka_consumer.py &
         
         sleep 5
         
         echo "Starting Producer in background..."
-        timeout 20s python /opt/airflow/project/Ingestion/kafka_producer_binance.py &
+        timeout 20s python kafka_producer_binance.py &
         
         wait
         exit 0

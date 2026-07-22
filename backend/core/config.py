@@ -1,5 +1,9 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import List
+from pathlib import Path
+
+# Resolve .env relative to this file so it works regardless of CWD
+_ENV_FILE = Path(__file__).parent.parent / ".env"
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "Crypto Genome Backend"
@@ -11,8 +15,8 @@ class Settings(BaseSettings):
     
     # Database
     POSTGRES_SERVER: str = "localhost"
-    POSTGRES_USER: str = "postgres"
-    POSTGRES_PASSWORD: str = "postgres"
+    POSTGRES_USER: str = "admin"
+    POSTGRES_PASSWORD: str = "admin"
     POSTGRES_DB: str = "crypto_genome"
     POSTGRES_PORT: str = "5432"
     
@@ -21,6 +25,6 @@ class Settings(BaseSettings):
     def SQLALCHEMY_DATABASE_URI(self) -> str:
         return f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
 
-    model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)
+    model_config = SettingsConfigDict(env_file=str(_ENV_FILE), case_sensitive=True)
 
 settings = Settings()
